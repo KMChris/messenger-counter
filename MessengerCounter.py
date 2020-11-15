@@ -21,7 +21,7 @@ def count_messages():
                 i+=1
                 messages += collections.Counter(pd.DataFrame(json.loads(
                     source.open('messages/inbox/' + sender + '/message_' + str(i) + '.json').read())[
-                                                                 'messages']).iloc[:, 0])
+                                'messages']).iloc[:, 0])
             except KeyError:
                 break
         total[sender] = {k.encode('iso-8859-1').decode('utf-8'): v for k, v in messages.items()}
@@ -40,8 +40,7 @@ def count_characters():
             try:
                 i+=1
                 frame = pd.DataFrame(json.loads(
-                    source.open('messages/inbox/' + sender + '/message_' + str(i) + '.json').read())[
-                                         'messages'])
+                    source.open('messages/inbox/' + sender + '/message_' + str(i) + '.json').read())['messages'])
                 frame['counted'] = frame.apply(
                     lambda row: collections.Counter(str(row['content']).encode('iso-8859-1').decode('utf-8')), axis=1)
                 counted_all += sum(frame['counted'], collections.Counter())
@@ -52,10 +51,10 @@ def count_characters():
         json.dump(total, output, ensure_ascii=False)
 
 
-def statistics(source):
-    source = pd.DataFrame(source).fillna(0).astype('int')
+def statistics(data_source):
+    data_source = pd.DataFrame(data_source).fillna(0).astype('int')
     pd.set_option('display.max_rows', None)
-    total_values = source.loc['total'].sort_values(ascending=False)
+    total_values = data_source.loc['total'].sort_values(ascending=False)
     print(total_values)
     print(total_values.describe())
     total_values = total_values.sort_values()
@@ -64,190 +63,93 @@ def statistics(source):
     plt.show()
 
 
-def conversation_statistics(source, conversation):
-    source = pd.DataFrame(source)
-    source = source.loc[:, conversation]
-    source = source[source > 0].sort_values(ascending=False).astype('int')
+def conversation_statistics(data_source, conversation):
+    data_source = pd.DataFrame(data_source)
+    data_source = data_source.loc[:, conversation]
+    data_source = data_source[data_source > 0].sort_values(ascending=False).astype('int')
     pd.set_option('display.max_rows', None)
-    print(source)
+    print(data_source)
 
 
-def user_statistics(source, user_name):
-    source = source.loc[user_name]
-    source = source[source > 0].sort_values(ascending=False)
-    source.index = source.index.map(lambda x: x.split('_')[0][:30])
+def user_statistics(data_source, user_name):
+    data_source = data_source.loc[user_name]
+    data_source = data_source[data_source > 0].sort_values(ascending=False)
+    data_source.index = data_source.index.map(lambda x: x.split('_')[0][:30])
     pd.set_option('display.max_rows', None)
     print(user_name, 'statistics:')
-    print(source)
+    print(data_source)
 
 
-def hours_conversation(conversation, delta=0.0):
+def interval_count(inbox_name, function, delta=0.0):
     messages, i = collections.Counter(), 0
     while True:
         try:
-            i+=1
-            messages += collections.Counter(pd.to_datetime(pd.DataFrame(json.loads(
-                source.open('messages/inbox/' + conversation + '/message_' + str(i) + '.json').read())[
-                                                                            'messages']).iloc[:, 1],
-                                                           unit='ms').dt.tz_localize('UTC').dt.tz_convert(
-                'Europe/Warsaw').add(pd.Timedelta(hours=-delta)).dt.hour)  # +delta*3600000)%86400000//3600000)
+            i += 1
+            messages += collections.Counter(function(pd.to_datetime(pd.DataFrame(json.loads(
+                source.open('messages/inbox/' + inbox_name + '/message_' + str(i) + '.json').read())[
+                            'messages']).iloc[:, 1], unit='ms').dt.tz_localize('UTC').dt.tz_convert(
+                            'Europe/Warsaw').add(pd.Timedelta(hours=-delta))))
         except KeyError:
             break
-    messages = pd.DataFrame(messages, index=[0])
-    print(messages.iloc[0].describe())
-    plt.bar(messages.columns, messages.iloc[0])
-    plt.xticks(list(range(24)), [f'{x % 24}:{int(abs((delta - int(delta)) * 60)):02}' for x in
-                                 range(-(-math.floor(delta) % 24),
-                                       math.floor(delta) % 24 if math.floor(delta) % 24 != 0 else 24)], rotation=90)
-    plt.xlim(-1, 24)
-    plt.savefig('messages.pdf')
-    plt.show()
+    return messages
 
-
-def hours_chats(delta=0.0):
-    messages = collections.Counter()
-    for sender in {x.split('/')[2] for x in source.namelist() if
-                   (x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/')}:
-        i = 0
-        while True:
-            try:
-                i+=1
-                messages += collections.Counter(pd.to_datetime(pd.DataFrame(json.loads(
-                    source.open('messages/inbox/' + sender + '/message_' + str(i) + '.json').read())[
-                                                                                'messages']).iloc[:, 1],
-                                                               unit='ms').dt.tz_localize('UTC').dt.tz_convert(
-                    'Europe/Warsaw').add(pd.Timedelta(hours=-delta)).dt.hour)
-            except KeyError:
-                break
-    messages = pd.DataFrame(messages, index=[0])
-    print(messages.iloc[0].describe())
-    plt.bar(messages.columns, messages.iloc[0])
-    plt.xticks(list(range(24)), [f'{x % 24}:{int(abs((delta - int(delta)) * 60)):02}' for x in
-                                 range(-(-math.floor(delta) % 24),
-                                       math.floor(delta) % 24 if math.floor(delta) % 24 != 0 else 24)], rotation=90)
-    plt.xlim(-1, 24)
-    plt.savefig('messages.pdf')
-    plt.show()
-
-
-def daily_conversation(conversation, delta=0.0):
-    messages, i = collections.Counter(), 0
-    while True:
-        try:
-            i+=1
-            messages += collections.Counter(pd.to_datetime(pd.DataFrame(json.loads(
-                source.open('messages/inbox/' + conversation + '/message_' + str(i) + '.json').read())[
-                                                                            'messages']).iloc[:, 1],
-                                                           unit='ms').dt.tz_localize('UTC').dt.tz_convert(
-                'Europe/Warsaw').add(pd.Timedelta(hours=-delta)).dt.date)
-        except KeyError:
-            break
-    messages = pd.DataFrame(messages, index=[0])
-    print(messages.iloc[0].describe())
-    plt.bar(messages.columns, messages.iloc[0])
-    plt.savefig('messages.pdf')
-    plt.show()
-
-
-def daily_chats(delta=0.0):
-    messages = collections.Counter()
-    for sender in {x.split('/')[2] for x in source.namelist() if
-                   (x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/')}:
-        i = 0
-        while True:
-            try:
-                i+=1
-                messages += collections.Counter(pd.to_datetime(pd.DataFrame(json.loads(
-                    source.open('messages/inbox/' + sender + '/message_' + str(i) + '.json').read())[
-                                                                                'messages']).iloc[:, 1],
-                                                               unit='ms').dt.tz_localize('UTC').dt.tz_convert(
-                    'Europe/Warsaw').add(pd.Timedelta(hours=-delta)).dt.date)
-            except KeyError:
-                break
+def interval_plot(messages):
     messages = pd.Series(messages).sort_index()
     print(messages.describe())
     plt.bar(messages.index, messages)
     plt.savefig('messages.pdf')
     plt.show()
 
-
-def monthly_conversation(conversation, delta=0.0):
-    messages, i = collections.Counter(), 0
-    while True:
-        try:
-            i+=1
-            messages += collections.Counter(pd.to_datetime(pd.DataFrame(json.loads(
-                source.open('messages/inbox/' + conversation + '/message_' + str(i) + '.json').read())[
-                                                                            'messages']).iloc[:, 1], unit='ms').add(
-                pd.Timedelta(days=-delta)).dt.to_period("M").astype(
-                'datetime64[ns]'))  # TODO not working charts for monthly
-        except KeyError:
-            break
-    messages = pd.Series(messages).sort_index()
-    print(messages.describe())
-    plt.bar(messages.index.astype(str), messages)
-    plt.xticks(rotation=90)
-    plt.subplots_adjust(bottom=0.2)
-    plt.savefig('messages.pdf')
-    plt.show()
-
-
-def monthly_chats(delta=0.0):
-    messages = collections.Counter()
-    for sender in {x.split('/')[2] for x in source.namelist() if
-                   (x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/')}:
-        i = 0
-        while True:
-            try:
-                i+=1
-                messages += collections.Counter(pd.to_datetime(pd.DataFrame(json.loads(
-                    source.open('messages/inbox/' + sender + '/message_' + str(i) + '.json').read())[
-                                                                                'messages']).iloc[:, 1], unit='ms').add(
-                    pd.Timedelta(days=-delta)).dt.to_period("M"))
-            except KeyError:
-                break
+def hours_plot(messages, delta):
     messages = pd.DataFrame(messages, index=[0])
     print(messages.iloc[0].describe())
     plt.bar(messages.columns, messages.iloc[0])
+    plt.xticks(list(range(24)), [f'{x % 24}:{int(abs((delta - int(delta)) * 60)):02}'
+                                 for x in range(-(-math.floor(delta) % 24),
+                                 math.floor(delta) % 24 if math.floor(delta) % 24 != 0 else 24)], rotation=90)
+    plt.xlim(-1, 24)
     plt.savefig('messages.pdf')
     plt.show()
 
+def hours_conversation(conversation, delta=0.0):
+    hours_plot(interval_count(conversation, lambda x: x.dt.hour, delta), delta)
 
-def yearly_conversation(conversation, delta=0.0):
-    messages, i = collections.Counter(), 0
-    while True:
-        try:
-            i+=1
-            messages += collections.Counter(pd.to_datetime(pd.DataFrame(json.loads(
-                source.open('messages/inbox/' + conversation + '/message_' + str(i) + '.json').read())[
-                                                                            'messages']).iloc[:, 1],
-                                                           unit='ms').dt.tz_localize('UTC').dt.tz_convert(
-                'Europe/Warsaw').add(pd.Timedelta(weeks=-delta * 4)).dt.year)
-        except KeyError:
-            break
-    messages = pd.DataFrame(messages, index=[0])
-    print(messages.iloc[0].describe())
-    plt.bar(messages.columns, messages.iloc[0])
-    plt.savefig('messages.pdf')
-    plt.show()
+def hours_chats(delta=0.0):
+    messages = collections.Counter()
+    for sender in {x.split('/')[2] for x in source.namelist()
+                   if (x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/')}:
+        messages+=interval_count(sender, lambda x: x.dt.hour, delta)
+    hours_plot(messages, delta)
 
+def daily_conversation(conversation, delta=0.0):
+    interval_plot(interval_count(conversation, lambda x: x.dt.date, delta))
 
-def yearly_chats(delta=0.0):
-
+def daily_chats(delta=0.0):
     messages = collections.Counter()
     for sender in {x.split('/')[2] for x in source.namelist() if
                    (x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/')}:
-        i = 0
-        while True:
-            try:
-                i+=1
-                messages += collections.Counter(pd.to_datetime(pd.DataFrame(json.loads(
-                    source.open('messages/inbox/' + sender + '/message_' + str(i) + '.json').read())[
-                                                                                'messages']).iloc[:, 1],
-                                                               unit='ms').dt.tz_localize('UTC').dt.tz_convert(
-                    'Europe/Warsaw').add(pd.Timedelta(weeks=-delta * 4)).dt.year)
-            except KeyError:
-                break
+        messages+=interval_count(sender, lambda x: x.dt.date, delta)
+    interval_plot(messages)
+
+def monthly_conversation(conversation): # TODO not working charts for monthly
+    interval_plot(interval_count(conversation, lambda x: x.dt.to_period("M").astype('datetime64[ns]')))
+
+
+def monthly_chats():
+    messages = collections.Counter()
+    for sender in {x.split('/')[2] for x in source.namelist() if
+                   (x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/')}:
+        messages+=interval_count(sender, lambda x: x.dt.to_period("M").astype('datetime64[ns]'))
+    interval_plot(messages)
+
+def yearly_conversation(conversation):
+    interval_plot(interval_count(conversation, lambda x: x.dt.year))
+
+def yearly_chats():
+    messages = collections.Counter()
+    for sender in {x.split('/')[2] for x in source.namelist()
+                   if (x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/')}:
+        messages+=interval_count(sender, lambda x: x.dt.year)
     messages = pd.DataFrame(messages, index=[0])
     print(messages.iloc[0].describe())
     plt.bar(messages.columns, messages.iloc[0])
@@ -262,10 +164,6 @@ def characters_statistics(data_source):
     data_source = data_source.sort_values(ascending=False).astype('int')
     pd.set_option('display.max_rows', None)
     print(data_source)
-    print(data_source[data_source.index.isin(['0', '1', '2', '3', '4', '5', '6', '7,' '8', '9'])])
-    print(data_source[data_source.index.isin(
-        ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
-         'w', 'x', 'y', 'z', 'ę', 'ó', 'ą', 'ś', 'ł', 'ż', 'ź', 'ć', 'ń'])])
     print(f'Total characters: {data_source.sum()}')
 
 
@@ -275,8 +173,10 @@ def characters_conversation_statistics(data_source, conversation): # TODO charac
 
 while True:
     filename = input('Enter filename: ')
+    filename = f'file:///{filename}' if filename[1]==':' else (
+               f'file:./{filename}' if filename.endswith('.zip') else f'file:./{filename}.zip')
     try:
-        source = zipfile.ZipFile(io.BytesIO(urlopen(f'file:./{filename}' if filename.endswith('.zip') else f'file:./{filename}.zip').read()))
+        source = zipfile.ZipFile(io.BytesIO(urlopen(filename).read()))
         break
     except URLError:
         print('File not found, try again.')
@@ -295,10 +195,10 @@ while True:
         print('  stats [conversation, -c] - displays statistics for counted messages')
         print('        [detailed statistics for specific conversation, character statistics]')
         print('  user [name] - detailed statistics for specific user')
-        print('  yearly [name, -m] - daily messages')
-        print('         [specific user, month difference]')
-        print('  monthly [name, -d] - daily messages')
-        print('          [specific user, day difference]')
+        print('  yearly [name] - yearly messages')
+        print('         [specific user]')
+        #print('  monthly [name, -d] - monthly messages (available soon)')
+        #print('          [specific user, day difference]')
         print('  daily [name, -h] - daily messages')
         print('        [specific user, hours difference]')
         print('  hours [name, -h] - hour distribution of messages')
@@ -407,16 +307,13 @@ while True:
         else:
             monthly_chats()
     if user_input[0] == 'yearly':
-        if len(user_input) > 1 and not user_input[1] == '-m':
+        if len(user_input) > 1:
             try:
                 data = json.loads(open('messages.json', 'r', encoding='utf-8').read())
                 if len(user_input) > 1:
                     for key in data.keys():
                         if key.startswith(user_input[1]):
-                            if len(user_input) < 3:
-                                yearly_conversation(key)
-                            else:
-                                yearly_conversation(key, float(user_input[2]))
+                            yearly_conversation(key)
                             break
                     else:
                         print('Conversation not found.')
@@ -425,8 +322,6 @@ while True:
             except FileNotFoundError:
                 if input('Messages not counted. Count messages?[y/n] ').lower() == 'y':
                     count_messages()
-        elif len(user_input) > 1 and user_input[1] == '-m':
-            yearly_chats(float(user_input[2]))
         else:
             yearly_chats()
     if user_input[0] == 'hours':
@@ -452,14 +347,3 @@ while True:
             hours_chats(float(user_input[2]))
         else:
             hours_chats()
-
-# def print_statistics():
-#     print('Total conversations:', len(senders))
-#     # for loop
-#     print('–' * 50)
-#     print('Conversation with', sender.split('_')[0])
-#     print('Messages in total:', sum(messages.values()))
-#     print()
-#     maximum = max(len(item) for item in messages.keys())
-#     for key, value in messages.items():
-#         print(f"{key.encode('iso-8859-1').decode('utf-8'):<{maximum}}{value:>10}")
