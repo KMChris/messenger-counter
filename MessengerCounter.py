@@ -284,17 +284,13 @@ while True:
         else:
             daily_chats()
     if user_input[0] == 'monthly':
-        if len(user_input) > 1 and not user_input[1] == '-d':
+        if len(user_input) > 1:
             try:
                 data = json.loads(open('messages.json', 'r', encoding='utf-8').read())
                 if len(user_input) > 1:
                     for key in data.keys():
                         if key.startswith(user_input[1]):
-                            if len(user_input) < 3:
-                                monthly_conversation(key)
-                            else:
-                                monthly_conversation(key, float(user_input[2]))
-                            break
+                            monthly_conversation(key)
                     else:
                         print('Conversation not found.')
                 else:
@@ -302,8 +298,6 @@ while True:
             except FileNotFoundError:
                 if input('Messages not counted. Count messages?[y/n] ').lower() == 'y':
                     count_messages()
-        elif len(user_input) > 1 and user_input[1] == '-d':
-            monthly_chats(float(user_input[2]))
         else:
             monthly_chats()
     if user_input[0] == 'yearly':
