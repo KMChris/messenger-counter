@@ -18,10 +18,10 @@ def count_messages():
         messages, i = collections.Counter(), 0
         while True:
             try:
-                i+=1
+                i += 1
                 messages += collections.Counter(pd.DataFrame(json.loads(
                     source.open('messages/inbox/' + sender + '/message_' + str(i) + '.json').read())[
-                                'messages']).iloc[:, 0])
+                                                                 'messages']).iloc[:, 0])
             except KeyError:
                 break
         total[sender] = {k.encode('iso-8859-1').decode('utf-8'): v for k, v in messages.items()}
@@ -38,7 +38,7 @@ def count_characters():
         counted_all, i = collections.Counter(), 0
         while True:
             try:
-                i+=1
+                i += 1
                 frame = pd.DataFrame(json.loads(
                     source.open('messages/inbox/' + sender + '/message_' + str(i) + '.json').read())['messages'])
                 frame['counted'] = frame.apply(
@@ -87,11 +87,13 @@ def interval_count(inbox_name, function, delta=0.0):
             i += 1
             messages += collections.Counter(function(pd.to_datetime(pd.DataFrame(json.loads(
                 source.open('messages/inbox/' + inbox_name + '/message_' + str(i) + '.json').read())[
-                            'messages']).iloc[:, 1], unit='ms').dt.tz_localize('UTC').dt.tz_convert(
-                            'Europe/Warsaw').add(pd.Timedelta(hours=-delta))))
+                                                                                     'messages']).iloc[:, 1],
+                                                                    unit='ms').dt.tz_localize('UTC').dt.tz_convert(
+                'Europe/Warsaw').add(pd.Timedelta(hours=-delta))))
         except KeyError:
             break
     return messages
+
 
 def interval_plot(messages):
     messages = pd.Series(messages).sort_index()
@@ -100,38 +102,45 @@ def interval_plot(messages):
     plt.savefig('messages.pdf')
     plt.show()
 
+
 def hours_plot(messages, delta):
     messages = pd.DataFrame(messages, index=[0])
     print(messages.iloc[0].describe())
     plt.bar(messages.columns, messages.iloc[0])
     plt.xticks(list(range(24)), [f'{x % 24}:{int(abs((delta - int(delta)) * 60)):02}'
                                  for x in range(-(-math.floor(delta) % 24),
-                                 math.floor(delta) % 24 if math.floor(delta) % 24 != 0 else 24)], rotation=90)
+                                                math.floor(delta) % 24 if math.floor(delta) % 24 != 0 else 24)],
+               rotation=90)
     plt.xlim(-1, 24)
     plt.savefig('messages.pdf')
     plt.show()
 
+
 def hours_conversation(conversation, delta=0.0):
     hours_plot(interval_count(conversation, lambda x: x.dt.hour, delta), delta)
+
 
 def hours_chats(delta=0.0):
     messages = collections.Counter()
     for sender in {x.split('/')[2] for x in source.namelist()
                    if (x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/')}:
-        messages+=interval_count(sender, lambda x: x.dt.hour, delta)
+        messages += interval_count(sender, lambda x: x.dt.hour, delta)
     hours_plot(messages, delta)
+
 
 def daily_conversation(conversation, delta=0.0):
     interval_plot(interval_count(conversation, lambda x: x.dt.date, delta))
+
 
 def daily_chats(delta=0.0):
     messages = collections.Counter()
     for sender in {x.split('/')[2] for x in source.namelist() if
                    (x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/')}:
-        messages+=interval_count(sender, lambda x: x.dt.date, delta)
+        messages += interval_count(sender, lambda x: x.dt.date, delta)
     interval_plot(messages)
 
-def monthly_conversation(conversation): # TODO not working charts for monthly
+
+def monthly_conversation(conversation):  # TODO not working charts for monthly
     interval_plot(interval_count(conversation, lambda x: x.dt.to_period("M").astype('datetime64[ns]')))
 
 
@@ -139,17 +148,19 @@ def monthly_chats():
     messages = collections.Counter()
     for sender in {x.split('/')[2] for x in source.namelist() if
                    (x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/')}:
-        messages+=interval_count(sender, lambda x: x.dt.to_period("M").astype('datetime64[ns]'))
+        messages += interval_count(sender, lambda x: x.dt.to_period("M").astype('datetime64[ns]'))
     interval_plot(messages)
+
 
 def yearly_conversation(conversation):
     interval_plot(interval_count(conversation, lambda x: x.dt.year))
+
 
 def yearly_chats():
     messages = collections.Counter()
     for sender in {x.split('/')[2] for x in source.namelist()
                    if (x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/')}:
-        messages+=interval_count(sender, lambda x: x.dt.year)
+        messages += interval_count(sender, lambda x: x.dt.year)
     messages = pd.DataFrame(messages, index=[0])
     print(messages.iloc[0].describe())
     plt.bar(messages.columns, messages.iloc[0])
@@ -167,14 +178,14 @@ def characters_statistics(data_source):
     print(f'Total characters: {data_source.sum()}')
 
 
-def characters_conversation_statistics(data_source, conversation): # TODO characters conversation statistics
+def characters_conversation_statistics(data_source, conversation):  # TODO characters conversation statistics
     print()
 
 
 while True:
     filename = input('Enter filename: ')
-    filename = f'file:///{filename}' if filename[1]==':' else (
-               f'file:./{filename}' if filename.endswith('.zip') else f'file:./{filename}.zip')
+    filename = f'file:///{filename}' if filename[1] == ':'\
+         else (f'file:./{filename}' if filename.endswith('.zip') else f'file:./{filename}.zip')
     try:
         source = zipfile.ZipFile(io.BytesIO(urlopen(filename).read()))
         break
@@ -197,8 +208,8 @@ while True:
         print('  user [name] - detailed statistics for specific user')
         print('  yearly [name] - yearly messages')
         print('         [specific user]')
-        #print('  monthly [name, -d] - monthly messages (available soon)')
-        #print('          [specific user, day difference]')
+        # print('  monthly [name, -d] - monthly messages (available soon)')
+        # print('          [specific user, day difference]')
         print('  daily [name, -h] - daily messages')
         print('        [specific user, hours difference]')
         print('  hours [name, -h] - hour distribution of messages')
