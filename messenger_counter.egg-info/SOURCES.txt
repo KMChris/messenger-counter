@@ -1,0 +1,6 @@
+README.md
+setup.py
+messenger_counter.egg-info/PKG-INFO
+messenger_counter.egg-info/SOURCES.txt
+messenger_counter.egg-info/dependency_links.txt
+messenger_counter.egg-info/top_level.txt

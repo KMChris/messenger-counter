@@ -87,9 +87,8 @@ def interval_count(inbox_name, function, delta=0.0):
             i += 1
             messages += collections.Counter(function(pd.to_datetime(pd.DataFrame(json.loads(
                 source.open('messages/inbox/' + inbox_name + '/message_' + str(i) + '.json').read())[
-                                                                                     'messages']).iloc[:, 1],
-                                                                    unit='ms').dt.tz_localize('UTC').dt.tz_convert(
-                'Europe/Warsaw').add(pd.Timedelta(hours=-delta))))
+                            'messages']).iloc[:, 1], unit='ms').dt.tz_localize('UTC').dt.tz_convert(
+                            'Europe/Warsaw').add(pd.Timedelta(hours=-delta))))
         except KeyError:
             break
     return messages
@@ -109,8 +108,7 @@ def hours_plot(messages, delta):
     plt.bar(messages.columns, messages.iloc[0])
     plt.xticks(list(range(24)), [f'{x % 24}:{int(abs((delta - int(delta)) * 60)):02}'
                                  for x in range(-(-math.floor(delta) % 24),
-                                                math.floor(delta) % 24 if math.floor(delta) % 24 != 0 else 24)],
-               rotation=90)
+                                 math.floor(delta) % 24 if math.floor(delta) % 24 != 0 else 24)], rotation=90)
     plt.xlim(-1, 24)
     plt.savefig('messages.pdf')
     plt.show()
