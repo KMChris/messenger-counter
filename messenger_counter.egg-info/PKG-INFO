@@ -4,7 +4,7 @@ Version: 0.3
 Summary: Package for counting messages from Facebook Messenger
 Home-page: https://github.com/KMChris/messenger-counter
 Author: Krzysztof Mizgała
-Author-email: KMChris007@gmail.com
+Author-email: krzysztof@mizgala.pl
 License: UNKNOWN
 Description: # Messenger Counter
         **Messenger Counter** is python script that counts messages from Facebook Messenger and shows various statistics.
