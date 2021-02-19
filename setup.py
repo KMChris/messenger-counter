@@ -5,9 +5,9 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
     name='messenger-counter',
-    version='0.2',
+    version='0.3',
     author='Krzysztof Mizgała',
-    author_email='KMChris007@gmail.com',
+    author_email='krzysztof@mizgala.pl',
     description='Package for counting messages from Facebook Messenger',
     long_description=long_description,
     long_description_content_type='text/markdown',

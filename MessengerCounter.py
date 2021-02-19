@@ -98,7 +98,7 @@ def interval_plot(messages):
     messages = pd.Series(messages).sort_index()
     print(messages.describe())
     plt.bar(messages.index, messages)
-    plt.savefig('messages.pdf')
+    # plt.savefig('messages.pdf')
     plt.show()
 
 
@@ -110,7 +110,7 @@ def hours_plot(messages, delta):
                                  for x in range(-(-math.floor(delta) % 24),
                                  math.floor(delta) % 24 if math.floor(delta) % 24 != 0 else 24)], rotation=90)
     plt.xlim(-1, 24)
-    plt.savefig('messages.pdf')
+    # plt.savefig('messages.pdf')
     plt.show()
 
 
@@ -162,7 +162,7 @@ def yearly_chats():
     messages = pd.DataFrame(messages, index=[0])
     print(messages.iloc[0].describe())
     plt.bar(messages.columns, messages.iloc[0])
-    plt.savefig('messages.pdf')
+    # plt.savefig('messages.pdf')
     plt.show()
 
 
@@ -180,173 +180,174 @@ def characters_conversation_statistics(data_source, conversation):  # TODO chara
     print()
 
 
-while True:
-    filename = input('Enter filename: ')
-    filename = f'file:///{filename}' if filename[1] == ':'\
-         else (f'file:./{filename}' if filename.endswith('.zip') else f'file:./{filename}.zip')
-    try:
-        source = zipfile.ZipFile(io.BytesIO(urlopen(filename).read()))
-        break
-    except URLError:
-        print('File not found, try again.')
-while True:
-    user_input = input('>').split(' ')
-    if user_input[0] == 'exit':
-        break
-    if user_input[0] == '' or user_input[0] == 'count':
-        count_messages()
-    if user_input[0] == 'chars':
-        count_characters()
-    if user_input[0] == 'help' or user_input[0] == '?':
-        print('Messenger Counter available commands:')
-        print('  count - counts all messages and saves to messages.json')
-        print('  chars - counts all characters and saves to messages_chars.json')
-        print('  stats [conversation, -c] - displays statistics for counted messages')
-        print('        [detailed statistics for specific conversation, character statistics]')
-        print('  user [name] - detailed statistics for specific user')
-        print('  yearly [name] - yearly messages')
-        print('         [specific user]')
-        # print('  monthly [name, -d] - monthly messages (available soon)')
-        # print('          [specific user, day difference]')
-        print('  daily [name, -h] - daily messages')
-        print('        [specific user, hours difference]')
-        print('  hours [name, -h] - hour distribution of messages')
-        print('        [specific user, hours difference]')
-        print('  help - displays this help prompt')
-        print('  exit - exits the program')
-    if user_input[0] == 'stats':
-        if len(user_input) > 2 and user_input[2] == '-c':
-            try:
-                data = json.loads(open('messages_chars.json', 'r', encoding='utf-8').read())
-                for key in data.keys():
-                    if key.startswith(user_input[1]):
-                        characters_conversation_statistics(data, key)
-                        break
-                else:
-                    print('Conversation not found.')
-            except FileNotFoundError:
-                if input('Characters not counted. Count characters?[y/n] ').lower() == 'y':
-                    count_characters()
-        elif len(user_input) > 1 and not user_input[1] == '-c':
-            try:
-                data = json.loads(open('messages.json', 'r', encoding='utf-8').read())
-                for key in data.keys():
-                    if key.startswith(user_input[1]):
-                        conversation_statistics(data, key)
-                        break
-                else:
-                    print('Conversation not found.')
-            except FileNotFoundError:
-                if input('Messages not counted. Count messages?[y/n] ').lower() == 'y':
-                    count_messages()
-        elif len(user_input) > 1 and user_input[1] == '-c':
-            try:
-                data = json.loads(open('messages_chars.json', 'r', encoding='utf-8').read())
-                characters_statistics(data)
-            except FileNotFoundError:
-                if input('Characters not counted. Count characters?[y/n] ').lower() == 'y':
-                    count_characters()
-        else:
-            try:
-                data = json.loads(open('messages.json', 'r', encoding='utf-8').read())
-                statistics(data)
-            except FileNotFoundError:
-                if input('Messages not counted. Count messages?[y/n] ').lower() == 'y':
-                    count_messages()
-    if user_input[0] == 'user':
-        if len(user_input) > 1:
-            try:
-                data = json.loads(open('messages.json', 'r', encoding='utf-8').read())
-                data = pd.DataFrame(data).fillna(0).astype('int')
-                for key in data.index:
-                    if key.startswith(' '.join(user_input[1:])):
-                        user_statistics(data, key)
-                        break
-                else:
-                    print('Conversation not found.')
-            except FileNotFoundError:
-                if input('Messages not counted. Count messages?[y/n] ').lower() == 'y':
-                    count_messages()
-        else:
-            print('Please specify user name.')
-    if user_input[0] == 'daily':
-        if len(user_input) > 1 and not user_input[1] == '-h':
-            try:
-                data = json.loads(open('messages.json', 'r', encoding='utf-8').read())
-                if len(user_input) > 1:
+if __name__=='__main__':
+    while True:
+        filename = input('Enter filename: ')
+        filename = f'file:///{filename}' if filename[1] == ':'\
+             else (f'file:./{filename}' if filename.endswith('.zip') else f'file:./{filename}.zip')
+        try:
+            source = zipfile.ZipFile(io.BytesIO(urlopen(filename).read()))
+            break
+        except URLError:
+            print('File not found, try again.')
+    while True:
+        user_input = input('>').split(' ')
+        if user_input[0] == 'exit':
+            break
+        if user_input[0] == '' or user_input[0] == 'count':
+            count_messages()
+        if user_input[0] == 'chars':
+            count_characters()
+        if user_input[0] == 'help' or user_input[0] == '?':
+            print('Messenger Counter available commands:')
+            print('  count - counts all messages and saves to messages.json')
+            print('  chars - counts all characters and saves to messages_chars.json')
+            print('  stats [conversation, -c] - displays statistics for counted messages')
+            print('        [detailed statistics for specific conversation, character statistics]')
+            print('  user [name] - detailed statistics for specific user')
+            print('  yearly [name] - yearly messages')
+            print('         [specific user]')
+            # print('  monthly [name, -d] - monthly messages (available soon)')
+            # print('          [specific user, day difference]')
+            print('  daily [name, -h] - daily messages')
+            print('        [specific user, hours difference]')
+            print('  hours [name, -h] - hour distribution of messages')
+            print('        [specific user, hours difference]')
+            print('  help - displays this help prompt')
+            print('  exit - exits the program')
+        if user_input[0] == 'stats':
+            if len(user_input) > 2 and user_input[2] == '-c':
+                try:
+                    data = json.loads(open('messages_chars.json', 'r', encoding='utf-8').read())
                     for key in data.keys():
                         if key.startswith(user_input[1]):
-                            if len(user_input) < 3:
-                                daily_conversation(key)
-                            else:
-                                daily_conversation(key, float(user_input[2]))
+                            characters_conversation_statistics(data, key)
                             break
                     else:
                         print('Conversation not found.')
-                else:
-                    print('Please specify conversation.')
-            except FileNotFoundError:
-                if input('Messages not counted. Count messages?[y/n] ').lower() == 'y':
-                    count_messages()
-        elif len(user_input) > 1 and user_input[1] == '-h':
-            daily_chats(float(user_input[2]))
-        else:
-            daily_chats()
-    if user_input[0] == 'monthly':
-        if len(user_input) > 1:
-            try:
-                data = json.loads(open('messages.json', 'r', encoding='utf-8').read())
-                if len(user_input) > 1:
+                except FileNotFoundError:
+                    if input('Characters not counted. Count characters?[y/n] ').lower() == 'y':
+                        count_characters()
+            elif len(user_input) > 1 and not user_input[1] == '-c':
+                try:
+                    data = json.loads(open('messages.json', 'r', encoding='utf-8').read())
                     for key in data.keys():
                         if key.startswith(user_input[1]):
-                            monthly_conversation(key)
-                    else:
-                        print('Conversation not found.')
-                else:
-                    print('Please specify conversation.')
-            except FileNotFoundError:
-                if input('Messages not counted. Count messages?[y/n] ').lower() == 'y':
-                    count_messages()
-        else:
-            monthly_chats()
-    if user_input[0] == 'yearly':
-        if len(user_input) > 1:
-            try:
-                data = json.loads(open('messages.json', 'r', encoding='utf-8').read())
-                if len(user_input) > 1:
-                    for key in data.keys():
-                        if key.startswith(user_input[1]):
-                            yearly_conversation(key)
+                            conversation_statistics(data, key)
                             break
                     else:
                         print('Conversation not found.')
-                else:
-                    print('Please specify conversation.')
-            except FileNotFoundError:
-                if input('Messages not counted. Count messages?[y/n] ').lower() == 'y':
-                    count_messages()
-        else:
-            yearly_chats()
-    if user_input[0] == 'hours':
-        if len(user_input) > 1 and not user_input[1] == '-h':
-            try:
-                data = json.loads(open('messages.json', 'r', encoding='utf-8').read())
-                if len(user_input) > 1:
-                    for key in data.keys():
-                        if key.startswith(user_input[1]):
-                            if len(user_input) < 3:
-                                hours_conversation(key)
-                            else:
-                                hours_conversation(key, float(user_input[2]))
+                except FileNotFoundError:
+                    if input('Messages not counted. Count messages?[y/n] ').lower() == 'y':
+                        count_messages()
+            elif len(user_input) > 1 and user_input[1] == '-c':
+                try:
+                    data = json.loads(open('messages_chars.json', 'r', encoding='utf-8').read())
+                    characters_statistics(data)
+                except FileNotFoundError:
+                    if input('Characters not counted. Count characters?[y/n] ').lower() == 'y':
+                        count_characters()
+            else:
+                try:
+                    data = json.loads(open('messages.json', 'r', encoding='utf-8').read())
+                    statistics(data)
+                except FileNotFoundError:
+                    if input('Messages not counted. Count messages?[y/n] ').lower() == 'y':
+                        count_messages()
+        if user_input[0] == 'user':
+            if len(user_input) > 1:
+                try:
+                    data = json.loads(open('messages.json', 'r', encoding='utf-8').read())
+                    data = pd.DataFrame(data).fillna(0).astype('int')
+                    for key in data.index:
+                        if key.startswith(' '.join(user_input[1:])):
+                            user_statistics(data, key)
                             break
                     else:
                         print('Conversation not found.')
-                else:
-                    print('Please specify conversation.')
-            except FileNotFoundError:
-                if input('Messages not counted. Count messages?[y/n] ').lower() == 'y':
-                    count_messages()
-        elif len(user_input) > 1 and user_input[1] == '-h':
-            hours_chats(float(user_input[2]))
-        else:
-            hours_chats()
+                except FileNotFoundError:
+                    if input('Messages not counted. Count messages?[y/n] ').lower() == 'y':
+                        count_messages()
+            else:
+                print('Please specify user name.')
+        if user_input[0] == 'daily':
+            if len(user_input) > 1 and not user_input[1] == '-h':
+                try:
+                    data = json.loads(open('messages.json', 'r', encoding='utf-8').read())
+                    if len(user_input) > 1:
+                        for key in data.keys():
+                            if key.startswith(user_input[1]):
+                                if len(user_input) < 3:
+                                    daily_conversation(key)
+                                else:
+                                    daily_conversation(key, float(user_input[2]))
+                                break
+                        else:
+                            print('Conversation not found.')
+                    else:
+                        print('Please specify conversation.')
+                except FileNotFoundError:
+                    if input('Messages not counted. Count messages?[y/n] ').lower() == 'y':
+                        count_messages()
+            elif len(user_input) > 1 and user_input[1] == '-h':
+                daily_chats(float(user_input[2]))
+            else:
+                daily_chats()
+        if user_input[0] == 'monthly':
+            if len(user_input) > 1:
+                try:
+                    data = json.loads(open('messages.json', 'r', encoding='utf-8').read())
+                    if len(user_input) > 1:
+                        for key in data.keys():
+                            if key.startswith(user_input[1]):
+                                monthly_conversation(key)
+                        else:
+                            print('Conversation not found.')
+                    else:
+                        print('Please specify conversation.')
+                except FileNotFoundError:
+                    if input('Messages not counted. Count messages?[y/n] ').lower() == 'y':
+                        count_messages()
+            else:
+                monthly_chats()
+        if user_input[0] == 'yearly':
+            if len(user_input) > 1:
+                try:
+                    data = json.loads(open('messages.json', 'r', encoding='utf-8').read())
+                    if len(user_input) > 1:
+                        for key in data.keys():
+                            if key.startswith(user_input[1]):
+                                yearly_conversation(key)
+                                break
+                        else:
+                            print('Conversation not found.')
+                    else:
+                        print('Please specify conversation.')
+                except FileNotFoundError:
+                    if input('Messages not counted. Count messages?[y/n] ').lower() == 'y':
+                        count_messages()
+            else:
+                yearly_chats()
+        if user_input[0] == 'hours':
+            if len(user_input) > 1 and not user_input[1] == '-h':
+                try:
+                    data = json.loads(open('messages.json', 'r', encoding='utf-8').read())
+                    if len(user_input) > 1:
+                        for key in data.keys():
+                            if key.startswith(user_input[1]):
+                                if len(user_input) < 3:
+                                    hours_conversation(key)
+                                else:
+                                    hours_conversation(key, float(user_input[2]))
+                                break
+                        else:
+                            print('Conversation not found.')
+                    else:
+                        print('Please specify conversation.')
+                except FileNotFoundError:
+                    if input('Messages not counted. Count messages?[y/n] ').lower() == 'y':
+                        count_messages()
+            elif len(user_input) > 1 and user_input[1] == '-h':
+                hours_chats(float(user_input[2]))
+            else:
+                hours_chats()
