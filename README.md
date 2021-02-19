@@ -1,6 +1,8 @@
 # Messenger Counter
 **Messenger Counter** is python script that counts messages from Facebook Messenger and shows various statistics.
 
+If you are interested in contributing to this repository, pull requests are much appreciated.
+
 To perform calculations on your messages you need to download data directly from Facebook (in JSON format).
 
 ### The most important features
