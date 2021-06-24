@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
     name='messenger-counter',
-    version='0.3',
+    version='0.4',
     author='Krzysztof Mizgała',
     author_email='krzysztof@mizgala.pl',
     description='Package for counting messages from Facebook Messenger',
@@ -15,9 +15,9 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     classifiers=[
         'Programming Language :: Python :: 3',
-        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
     ],
     python_requires='>=3.5',
     install_requires=['pandas', 'matplotlib'],
