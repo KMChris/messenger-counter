@@ -8,7 +8,7 @@ To perform calculations on your messages you need to download data directly from
 ### The most important features
 ##### Counter
 Use `count` to count all messages and save summary to *messages.json*\
-Alternatively command `chars` counts all characters and saves to *messages_chars.json*
+Alternatively command `chars` counts all characters and saves to *messages_chars.json*.
 
 ##### Statistics
 Use `stats` to display statistics for all counted messages.\
@@ -22,11 +22,11 @@ Specify user by using `yearly [name]`.
 
 `daily` &mdash; displays summary and chart of daily messages from the beginning of all conversations.\
 Specify messages with one user by using `daily [name]`.\
-Add `-h [hours]` at the end to shift the chart by the certain number of hours.
+Add `-d [hours]` at the end to shift the chart by the certain number of hours.
 
 Use `hours` to show hour distribution of messages\
 Specify messages with one user by using `hours [name]`.\
-Add `-h [hours]` at the end to shift the chart by the certain number of hours.
+Add `-d [hours]` at the end to shift the chart by the certain number of hours.
 
 Type `help` to display help prompt.\
 Use `exit` to exit the program.

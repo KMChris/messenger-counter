@@ -137,5 +137,9 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-#Custom
+# generated files
+messages.pdf
+messages.json
+
+# IDE
 .idea/

@@ -3,11 +3,44 @@ import io
 import json
 import math
 import zipfile
+import logging
 from urllib.error import URLError
 from urllib.request import urlopen
-
 import pandas as pd
 from matplotlib import pyplot as plt
+
+
+def set_source(filename):
+    filename = f'file:///{filename}' if filename[1] == ':' \
+        else (f'file:./{filename}' if filename.endswith('.zip') else f'file:./{filename}.zip')
+    try:
+        global source
+        source = zipfile.ZipFile(io.BytesIO(urlopen(filename).read()))
+    except URLError:
+        logging.error('File not found, try again.')
+
+def get_data(conversation=None, chars=False, user=False):
+    try:
+        data = json.loads(open('messages_chars.json' if chars else 'messages.json', 'r', encoding='utf-8').read())
+        if user:
+            data = pd.DataFrame(data).fillna(0).astype('int')
+            for key in data.index:
+                if key.startswith(' '.join(conversation)):
+                    return data, key
+            else:
+                logging.error('Conversation not found.')
+                return None
+        if conversation is not None:
+            for key in data.keys():
+                if key.startswith(conversation):
+                    return data, key
+            else:
+                logging.error('Conversation not found.')
+                return None
+        else:
+            return data
+    except FileNotFoundError:
+        logging.error('Characters not counted.' if chars else 'Messages not counted.')
 
 
 def count_messages():
@@ -51,7 +84,14 @@ def count_characters():
         json.dump(total, output, ensure_ascii=False)
 
 
-def statistics(data_source):
+def count(chars=False):
+    if chars:
+        count_characters()
+    else:
+        count_messages()
+
+
+def messages_statistics(data_source):
     data_source = pd.DataFrame(data_source).fillna(0).astype('int')
     pd.set_option('display.max_rows', None)
     total_values = data_source.loc['total'].sort_values(ascending=False)
@@ -176,6 +216,42 @@ def characters_statistics(data_source):
     print(f'Total characters: {data_source.sum()}')
 
 
+def statistics(data_source, conversation=None, chars=False):
+    if conversation is None:
+        if chars:
+            characters_statistics(data_source)
+        else:
+            messages_statistics(data_source)
+    else:
+        if chars:
+            raise NotImplementedError()
+        else:
+            print(data_source)
+            print()
+            print(conversation)
+            conversation_statistics(data_source, conversation)
+
+def hours(difference, conversation=None):
+    if conversation is None:
+        daily_chats(difference)
+    else:
+        daily_conversation(conversation, difference)
+
+
+def daily(difference, conversation=None):
+    if conversation is None:
+        daily_chats(difference)
+    else:
+        daily_conversation(conversation, difference)
+
+
+def yearly(conversation=None):
+    if conversation is None:
+        yearly_chats()
+    else:
+        yearly_conversation(conversation)
+
+
 def characters_conversation_statistics(data_source, conversation):  # TODO characters conversation statistics
     print()
 
@@ -250,7 +326,7 @@ if __name__=='__main__':
             else:
                 try:
                     data = json.loads(open('messages.json', 'r', encoding='utf-8').read())
-                    statistics(data)
+                    messages_statistics(data)
                 except FileNotFoundError:
                     if input('Messages not counted. Count messages?[y/n] ').lower() == 'y':
                         count_messages()
