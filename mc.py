@@ -14,6 +14,8 @@ if __name__ == '__main__':
     parser_count.add_argument('file',
         help='path to .zip file downloaded from Facebook, '
              'add -c argument to count chars')
+    parser_count.add_argument('-c', '--chars', action='store_true',
+        help='refer to characters instead of messages')
 
     parser_stats = subparsers.add_parser('stats',
         help='displays statistics for counted messages, '
@@ -21,11 +23,17 @@ if __name__ == '__main__':
              'use -c for character statistics')
     parser_stats.add_argument('conversation', nargs='?', type=str, const=None,
         help='name of the conversation')
+    parser_stats.add_argument('-c', '--chars', action='store_true',
+        help='refer to characters instead of messages')
 
     parser_user = subparsers.add_parser('user',
         help='detailed statistics for specific user')
-    parser_user.add_argument('conversation', nargs='+', type=list,
-        help='name of the conversation with specific user')
+    parser_user.add_argument('conversation', type=str,
+        help='name of a user')
+    parser_user.add_argument('-c', '--chars', action='store_true',
+        help='refer to characters instead of messages')
+    parser_user.add_argument('-d', '--difference', type=float, default=0.0,
+        help='time shift in hours to show statistics differently')
 
     parser_yearly = subparsers.add_parser('yearly',
         help='number of messages per year')
@@ -36,15 +44,14 @@ if __name__ == '__main__':
         help='average number of messages by day of the week')
     parser_daily.add_argument('conversation', nargs='?', type=str, const=None,
         help='name of the conversation with specific user')
+    parser_daily.add_argument('-d', '--difference', type=float, default=0.0,
+        help='time shift in hours to show statistics differently')
 
     parser_hours = subparsers.add_parser('hours',
         help='average number of messages by hour')
     parser_hours.add_argument('conversation', nargs='?', type=str, const=None,
         help='name of the conversation with specific user')
-
-    parser.add_argument('-c', '--chars', action='store_true',
-        help='refer to characters instead of messages')
-    parser.add_argument('-d', '--difference', type=float, default=0.0,
+    parser_hours.add_argument('-d', '--difference', type=float, default=0.0,
         help='time shift in hours to show statistics differently')
 
     args = parser.parse_args()
@@ -63,7 +70,7 @@ if __name__ == '__main__':
         )
     elif args.command == 'user':
         MessengerCounter.user_statistics(
-            MessengerCounter.get_data(user=True)
+            *MessengerCounter.get_data(args.conversation, user=True)
         )
     elif args.command == 'yearly':
         MessengerCounter.yearly(args.conversation)
