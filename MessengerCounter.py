@@ -27,20 +27,20 @@ def get_data(conversation=None, chars=False, user=False):
         if user:
             data = pd.DataFrame(data).fillna(0).astype('int')
             for key in data.index:
-                if key.lower().startswith(conversation):
+                if key.lower().startswith(conversation.lower()):
                     return data, key
             else:
                 logging.error('Conversation not found.')
-                return None
+                return None, None
         if conversation is not None:
             for key in data.keys():
-                if key.lower().startswith(conversation):
+                if key.lower().startswith(conversation.lower()):
                     return data, key
             else:
                 logging.error('Conversation not found.')
-                return None
+                return None, None
         else:
-            return data
+            return data, None
     except FileNotFoundError:
         logging.error('Characters not counted.' if chars else 'Messages not counted.')
 
@@ -105,8 +105,6 @@ def statistics(data_source, conversation=None, chars=False):
         if chars:
             raise NotImplementedError()
         else:
-            print(data_source)
-            print()
             print(conversation)
             conversation_statistics(data_source, conversation)
 
@@ -136,6 +134,10 @@ def characters_statistics(data_source):
     pd.set_option('display.max_rows', None)
     print(data_source)
     print(f'Total characters: {data_source.sum()}')
+
+# TODO characters conversation statistics
+def characters_conversation_statistics(data_source, conversation):
+    print()
 
 
 # User statistics
@@ -168,7 +170,7 @@ def interval_plot(messages):
     messages = pd.Series(messages).sort_index()
     print(messages.describe())
     plt.bar(messages.index, messages)
-    # plt.savefig('messages.pdf')
+    plt.savefig('messages.pdf')
     plt.show()
 
 
@@ -178,7 +180,13 @@ def hours(difference, conversation=None):
     if conversation is None:
         hours_chats(difference)
     else:
-        hours_conversation(conversation, difference)
+        data = json.loads(open('messages.json', 'r', encoding='utf-8').read())
+        for key in data.keys():
+            if key.lower().startswith(conversation.lower()):
+                hours_conversation(key, difference)
+                break
+        else:
+            print('Conversation not found.')
 
 def hours_conversation(conversation, delta=0.0):
     hours_plot(interval_count(conversation, lambda x: x.dt.hour, delta), delta)
@@ -198,7 +206,7 @@ def hours_plot(messages, delta):
                                  for x in range(-(-math.floor(delta) % 24),
                                  math.floor(delta) % 24 if math.floor(delta) % 24 != 0 else 24)], rotation=90)
     plt.xlim(-1, 24)
-    # plt.savefig('messages.pdf')
+    plt.savefig('messages.pdf')
     plt.show()
 
 
@@ -208,7 +216,13 @@ def daily(difference, conversation=None):
     if conversation is None:
         daily_chats(difference)
     else:
-        daily_conversation(conversation, difference)
+        data = json.loads(open('messages.json', 'r', encoding='utf-8').read())
+        for key in data.keys():
+            if key.lower().startswith(conversation.lower()):
+                daily_conversation(key, difference)
+                break
+        else:
+            print('Conversation not found.')
 
 def daily_conversation(conversation, delta=0.0):
     interval_plot(interval_count(conversation, lambda x: x.dt.date, delta))
@@ -240,7 +254,13 @@ def yearly(conversation=None):
     if conversation is None:
         yearly_chats()
     else:
-        yearly_conversation(conversation)
+        data = json.loads(open('messages.json', 'r', encoding='utf-8').read())
+        for key in data.keys():
+            if key.lower().startswith(conversation.lower()):
+                yearly_conversation(key)
+                break
+        else:
+            print('Conversation not found.')
 
 def yearly_conversation(conversation):
     interval_plot(interval_count(conversation, lambda x: x.dt.year))
@@ -253,12 +273,8 @@ def yearly_chats():
     messages = pd.DataFrame(messages, index=[0])
     print(messages.iloc[0].describe())
     plt.bar(messages.columns, messages.iloc[0])
-    # plt.savefig('messages.pdf')
+    plt.savefig('messages.pdf')
     plt.show()
-
-# TODO characters conversation statistics
-def characters_conversation_statistics(data_source, conversation):
-    print()
 
 
 if __name__=='__main__':
