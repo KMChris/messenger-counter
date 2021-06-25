@@ -1,37 +1,87 @@
 # Messenger Counter
-**Messenger Counter** is python script that counts messages from Facebook Messenger and shows various statistics.
+
+![Dependency status](https://img.shields.io/librariesio/github/kmchris/messenger-counter?style=flat-square)
+![PyPI version](https://img.shields.io/pypi/v/messenger-counter?style=flat-square)
+![PyPI downloads](https://img.shields.io/pypi/dm/messenger-counter?style=flat-square)
+
+**Messenger Counter** is a python script that counts messages from Facebook Messenger and shows various statistics.
 
 If you are interested in contributing to this repository, pull requests are much appreciated.
 
-To perform calculations on your messages you need to download data directly from Facebook (in JSON format).
+Note: To use this software you need to download your data directly from Facebook (in JSON format).
+[How to download my data?](https://github.com/KMChris/messenger-counter#how-to-download-messages)
 
-### The most important features
-##### Counter
-Use `count` to count all messages and save summary to *messages.json*\
-Alternatively command `chars` counts all characters and saves to *messages_chars.json*.
 
-##### Statistics
-Use `stats` to display statistics for all counted messages.\
-You can specify a conversation to which apply command: `stats [conversation]`.\
-Add `-c` at the end to  display detailed character statistics.
+### Usage
 
-Use `user [name]` for detailed statistics for specific user.
+1. Make sure you have Python 3 installed, then install the necessary
+   dependencies with `pip install -r requirements.txt`. 
+2. Count your messages using (insert path for your .zip file)
+```shell
+python mc.py count "facebook-YourName.zip"
+```
+3. Add flag `--chars` or `-c` to count characters (optional)
+```shell
+python mc.py count -c "facebook-YourName.zip"
+```
+4. Use following commands for different statistics (examples below)
+```shell
+python mc.py [-h] command [options]
+```
+Available commands:
+* `count [-c] file` &mdash; Counts all messages/characters and saves
+  to _messages.json_ or _messages_chars.json_ file.
+* `stats [-c] [converstion]` &mdash; Displays statistics for counted messages.
+  You can specify conversation for detailed statistics
+  and use -c for character statistics.
+* `user name` &mdash; Detailed statistics for specific person
+* `yearly file [conversation]` &mdash; Number of messages per year.
+  (please specify path to .zip file as for counting messages)
+  You can specify conversation for more precise statistics. 
+* `daily [-d DIFF] file [conversation]` &mdash; Number of messages daily.
+  (use `-d` or `--difference` flag to time shift by some number
+  of hours and show statistics differently)
+* `hours [-d DIFF] file [conversation]` &mdash; Average number of messages
+  by hour throughout the day. (additional options as above)
 
-`yearly` &mdash; displays summary and chart of messages grouped by year.\
-Specify user by using `yearly [name]`.
 
-`daily` &mdash; displays summary and chart of daily messages from the beginning of all conversations.\
-Specify messages with one user by using `daily [name]`.\
-Add `-d [hours]` at the end to shift the chart by the certain number of hours.
+### Examples
 
-Use `hours` to show hour distribution of messages\
-Specify messages with one user by using `hours [name]`.\
-Add `-d [hours]` at the end to shift the chart by the certain number of hours.
+Show general statistics of all conversations
+```shell
+python mc.py stats
+```
 
-Type `help` to display help prompt.\
-Use `exit` to exit the program.
+Show messages statistics for specific conversation.
+(you can list all conversations by running previous example) 
+```shell
+python mc.py stats JohnDoe
+```
+
+Program allows you to write only the beginning of the conversation name.
+It will return first matching occurrence. (Works exactly as the previous example)
+```shell
+python mc.py stats Joh
+```
+
+Shows how many messages did the person send grouped by conversation.
+```shell
+python mc.py user "John Doe"
+```
+
+Shows how many messages on average have you send and received grouped by time of the day.
+```shell
+python mc.py daily "facebook-YourName.zip"
+```
+
+Similar to previous one, but limited to one conversation.
+```shell
+python mc.py daily "facebook-YourName.zip" John
+```
+
 
 ### How to download messages
+
 1. Select Settings & Privacy in the top right of Facebook, then click Settings.
 1. In the left column, click Your Facebook Information.
 1. Click on Download Your Information.
@@ -45,6 +95,6 @@ Use `exit` to exit the program.
 1. Click Download and enter your password.
 
 # Licence
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+![Licence](https://img.shields.io/github/license/kmchris/messenger-counter?style=flat-square)
 
-**Messenger Counter** is licenced under [Gnu Public Licence v3](https://www.gnu.org/licenses/gpl-3.0).
+**Messenger Counter** is licenced under [MIT Licence](https://opensource.org/licenses/MIT).
