@@ -140,6 +140,7 @@ cython_debug/
 # generated files
 messages.pdf
 messages.json
+messages_chars.json
 
 # IDE
 .idea/
