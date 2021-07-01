@@ -40,7 +40,7 @@ if __name__ == '__main__':
         help='name of the conversation with specific user')
 
     parser_daily = subparsers.add_parser('daily',
-        help='average number of messages by day of the week')
+        help='number of messages per day')
     parser_daily.add_argument('file',
         help='path to .zip file downloaded from Facebook')
     parser_daily.add_argument('conversation', nargs='?', type=str, const=None,

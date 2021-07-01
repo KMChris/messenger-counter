@@ -13,6 +13,18 @@ from matplotlib import pyplot as plt
 # Getting data
 
 def set_source(filename):
+    """
+    Sets source global variable to the path of .zip file.
+
+    :param filename: path to the downloaded .zip file
+    :return: None
+
+    You can provide relative path to file
+    >>> set_source('facebook-YourName.zip')
+
+    Absolute path (works only on Windows)
+    >>> set_source('C:/Users/Admin/Downloads/facebook-YourName.zip')
+    """
     filename = f'file:///{filename}' if filename[1] == ':' \
         else (f'file:./{filename}' if filename.endswith('.zip') else f'file:./{filename}.zip')
     try:
@@ -22,6 +34,19 @@ def set_source(filename):
         logging.error('File not found, try again.')
 
 def get_data(conversation=None, chars=False, user=False):
+    """
+    Reads data from messages.json or messages_chars.json
+    and finds key based on the beginning of the string.
+
+    :param conversation: beginning of the conversation id
+                         or None for overall statistics (default None)
+    :param chars: True for counting chars in messages_chars.json,
+                  False for counting messages in messages.json (default False)
+    :param user: True for user name instead of conversation id,
+                 False otherwise (default False)
+    :return: dictionary containing the data and if applicable
+             a key pointing to a specific conversation, otherwise None
+    """
     try:
         data = json.loads(open('messages_chars.json' if chars else 'messages.json', 'r', encoding='utf-8').read())
         if user:
@@ -48,6 +73,11 @@ def get_data(conversation=None, chars=False, user=False):
 # Counting messages and characters
 
 def count_messages():
+    """
+    Counts messages and saves output to messages.json.
+
+    :return: None
+    """
     namelist = source.namelist()
     total, senders = {}, {x.split('/')[2] for x in namelist
                           if (x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/')}
@@ -67,6 +97,11 @@ def count_messages():
         json.dump(total, output, ensure_ascii=False)
 
 def count_characters():
+    """
+    Counts characters from messages and saves output to messages_chars.json.
+
+    :return: None
+    """
     namelist = source.namelist()
     total, senders = {}, {x.split('/')[2] for x in namelist
                           if (x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/')}
@@ -87,6 +122,14 @@ def count_characters():
         json.dump(total, output, ensure_ascii=False)
 
 def count(chars=False):
+    """
+    Counts messages or characters from messages
+    and saves output to the file.
+
+    :param chars: True for counting characters,
+                  False for counting messages (default False)
+    :return: None
+    """
     if chars:
         count_characters()
     else:
@@ -96,6 +139,17 @@ def count(chars=False):
 # Statistics
 
 def statistics(data_source, conversation=None, chars=False):
+    """
+    Prints statistics of given data source.
+
+    :param data_source: dictionary containing prepared data generated
+                        by the get_data() function
+    :param conversation: conversation id or None for overall statistics
+                         (default None)
+    :param chars: True for character statistics instead of messages,
+                  False otherwise (default False)
+    :return: None
+    """
     if conversation is None:
         if chars:
             characters_statistics(data_source)
@@ -109,6 +163,13 @@ def statistics(data_source, conversation=None, chars=False):
             conversation_statistics(data_source, conversation)
 
 def messages_statistics(data_source):
+    """
+    Prints messages overall statistics of given data source.
+
+    :param data_source: dictionary containing prepared data generated
+                        by the get_data() function
+    :return: None
+    """
     data_source = pd.DataFrame(data_source).fillna(0).astype('int')
     pd.set_option('display.max_rows', None)
     total_values = data_source.loc['total'].sort_values(ascending=False)
@@ -120,6 +181,14 @@ def messages_statistics(data_source):
     plt.show()
 
 def conversation_statistics(data_source, conversation):
+    """
+    Prints messages statistics for specific conversation of given data source.
+
+    :param data_source: dictionary containing prepared data generated
+                        by the get_data() function
+    :param conversation: conversation id, or key from get_data() function
+    :return: None
+    """
     data_source = pd.DataFrame(data_source)
     data_source = data_source.loc[:, conversation]
     data_source = data_source[data_source > 0].sort_values(ascending=False).astype('int')
@@ -127,6 +196,13 @@ def conversation_statistics(data_source, conversation):
     print(data_source)
 
 def characters_statistics(data_source):
+    """
+    Prints characters statistics of given data source.
+
+    :param data_source: dictionary containing prepared data generated
+                        by the get_data() function
+    :return: None
+    """
     data_source = pd.DataFrame(data_source)
     data_source['total'] = data_source.sum(axis=1)
     data_source = data_source.iloc[:, -1]
@@ -137,12 +213,28 @@ def characters_statistics(data_source):
 
 # TODO characters conversation statistics
 def characters_conversation_statistics(data_source, conversation):
-    print()
+    """
+    Prints characters statistics for specific conversation of given data source.
+
+    :param data_source: dictionary containing prepared data generated
+                        by the get_data() function
+    :param conversation: conversation id, or key from get_data() function
+    :return: None
+    """
+    pass
 
 
 # User statistics
 
 def user_statistics(data_source, user_name):
+    """
+    Prints detailed statistics for specific person of given data source.
+
+    :param data_source: dictionary containing prepared data generated
+                        by the get_data() function
+    :param user_name: person name, or key from get_data() function
+    :return: None
+    """
     data_source = data_source.loc[user_name]
     data_source = data_source[data_source > 0].sort_values(ascending=False)
     data_source.index = data_source.index.map(lambda x: x.split('_')[0][:30])
@@ -154,10 +246,21 @@ def user_statistics(data_source, user_name):
 # Intervals
 
 def interval_count(inbox_name, function, delta=0.0):
+    """
+    Counts number of messages based on given timeframe function
+
+    :param inbox_name: directory name that contains requested messages
+                       (usually conversation id)
+    :param function: pandas function that returns requested time part
+    :param delta: number of hours to time shift by
+                  and count messages differently (default 0.0)
+    :return: dictionary of number of messages grouped by timeframe
+    """
     messages, i = collections.Counter(), 0
     while True:
         try:
             i += 1
+            # iterates over all .json files in requested directory
             messages += collections.Counter(function(pd.to_datetime(pd.DataFrame(json.loads(
                 source.open('messages/inbox/' + inbox_name + '/message_' + str(i) + '.json').read())[
                             'messages']).iloc[:, 1], unit='ms').dt.tz_localize('UTC').dt.tz_convert(
@@ -167,6 +270,13 @@ def interval_count(inbox_name, function, delta=0.0):
     return messages
 
 def interval_plot(messages):
+    """
+    Shows chart based on previously defined timeframe
+
+    :param messages: dictionary of number of messages
+                     grouped by timeframe
+    :return: None
+    """
     messages = pd.Series(messages).sort_index()
     print(messages.describe())
     plt.bar(messages.index, messages)
@@ -177,6 +287,16 @@ def interval_plot(messages):
 # Hours
 
 def hours(difference, conversation=None):
+    """
+    Shows chart of average number of messages
+    send by hour throughout the day.
+
+    :param difference: number of hours to time shift by
+                       and show statistics differently
+    :param conversation: conversation id or None for statistics
+                         from all conversations (default None)
+    :return: None
+    """
     if conversation is None:
         hours_chats(difference)
     else:
@@ -189,9 +309,26 @@ def hours(difference, conversation=None):
             print('Conversation not found.')
 
 def hours_conversation(conversation, delta=0.0):
+    """
+    Shows chart of average number of messages send
+    in specific conversation by hour throughout the day.
+
+    :param conversation: conversation id, or key from get_data() function
+    :param delta: number of hours to time shift by
+                  and show statistics differently (default 0.0)
+    :return: None
+    """
     hours_plot(interval_count(conversation, lambda x: x.dt.hour, delta), delta)
 
 def hours_chats(delta=0.0):
+    """
+    Shows chart of average number of messages send
+    across all conversations by hour throughout the day.
+
+    :param delta: number of hours to time shift by
+                  and show statistics differently (default 0.0)
+    :return: None
+    """
     messages = collections.Counter()
     for sender in {x.split('/')[2] for x in source.namelist()
                    if (x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/')}:
@@ -199,6 +336,16 @@ def hours_chats(delta=0.0):
     hours_plot(messages, delta)
 
 def hours_plot(messages, delta):
+    """
+    Shows chart of average number of messages
+    grouped by hour throughout the day.
+
+    :param messages: dictionary of number of messages
+                     grouped by timeframe
+    :param delta: number of hours to time shift by
+                  and show statistics differently
+    :return: None
+    """
     messages = pd.DataFrame(messages, index=[0])
     print(messages.iloc[0].describe())
     plt.bar(messages.columns, messages.iloc[0])
@@ -213,6 +360,15 @@ def hours_plot(messages, delta):
 # Daily
 
 def daily(difference, conversation=None):
+    """
+    Shows chart of number of messages per day.
+
+    :param difference: number of hours to time shift by
+                       and show statistics differently
+    :param conversation: conversation id or None for statistics
+                         from all conversations (default None)
+    :return: None
+    """
     if conversation is None:
         daily_chats(difference)
     else:
@@ -225,9 +381,26 @@ def daily(difference, conversation=None):
             print('Conversation not found.')
 
 def daily_conversation(conversation, delta=0.0):
+    """
+    Shows chart of number of messages per day
+    from the beginning of the conversation.
+
+    :param conversation: conversation id, or key from get_data() function
+    :param delta: number of hours to time shift by
+                  and show statistics differently (default 0.0)
+    :return: None
+    """
     interval_plot(interval_count(conversation, lambda x: x.dt.date, delta))
 
 def daily_chats(delta=0.0):
+    """
+    Shows chart of number of messages per day
+    across all conversation.
+
+    :param delta: number of hours to time shift by
+                  and show statistics differently (default 0.0)
+    :return: None
+    """
     messages = collections.Counter()
     for sender in {x.split('/')[2] for x in source.namelist() if
                    (x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/')}:
@@ -238,9 +411,22 @@ def daily_chats(delta=0.0):
 # Monthly (not working)
 
 def monthly_conversation(conversation):  # TODO not working charts for monthly
+    """
+    Shows chart of number of messages per month.
+
+    :param conversation: conversation id or None for statistics
+                         from all conversations (default None)
+    :return: None
+    """
     interval_plot(interval_count(conversation, lambda x: x.dt.to_period("M").astype('datetime64[ns]')))
 
 def monthly_chats():
+    """
+    Shows chart of number of messages per month
+    across all conversation.
+
+    :return: None
+    """
     messages = collections.Counter()
     for sender in {x.split('/')[2] for x in source.namelist() if
                    (x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/')}:
@@ -251,6 +437,13 @@ def monthly_chats():
 # Yearly
 
 def yearly(conversation=None):
+    """
+    Shows chart of number of messages per year.
+
+    :param conversation: conversation id or None for statistics
+                         from all conversations (default None)
+    :return: None
+    """
     if conversation is None:
         yearly_chats()
     else:
@@ -263,9 +456,22 @@ def yearly(conversation=None):
             print('Conversation not found.')
 
 def yearly_conversation(conversation):
+    """
+    Shows chart of number of messages per year
+    from the beginning of the conversation.
+
+    :param conversation: conversation id, or key from get_data() function
+    :return: None
+    """
     interval_plot(interval_count(conversation, lambda x: x.dt.year))
 
 def yearly_chats():
+    """
+    Shows chart of number of messages per year
+    across all conversation.
+
+    :return: None
+    """
     messages = collections.Counter()
     for sender in {x.split('/')[2] for x in source.namelist()
                    if (x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/')}:

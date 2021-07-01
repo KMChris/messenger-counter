@@ -11,22 +11,25 @@ If you are interested in contributing to this repository, pull requests are much
 Note: To use this software you need to download your data directly from Facebook (in JSON format).
 [How to download my data?](https://github.com/KMChris/messenger-counter#how-to-download-messages)
 
+## Installation 
 
-### Usage
+```shell
+pip install messenger-counter
+```
 
-1. Make sure you have Python 3 installed, then install the necessary
-   dependencies with `pip install -r requirements.txt`. 
-2. Count your messages using (insert path for your .zip file)
+## CLI usage
+
+1. Count your messages using (insert path for your .zip file)
 ```shell
-python mc.py count "facebook-YourName.zip"
+python -m mc count "facebook-YourName.zip"
 ```
-3. Add flag `--chars` or `-c` to count characters (optional)
+2. Add flag `--chars` or `-c` to count characters (optional)
 ```shell
-python mc.py count -c "facebook-YourName.zip"
+python -m mc count -c "facebook-YourName.zip"
 ```
-4. Use following commands for different statistics (examples below)
+3. Use following commands for different statistics (examples below)
 ```shell
-python mc.py [-h] command [options]
+python -m mc [-h] command [options]
 ```
 Available commands:
 * `count [-c] file` &mdash; Counts all messages/characters and saves
@@ -44,49 +47,59 @@ Available commands:
 * `hours [-d DIFF] file [conversation]` &mdash; Average number of messages
   by hour throughout the day. (additional options as above)
 
-
-### Examples
+## Examples
 
 Show general statistics of all conversations
 ```shell
-python mc.py stats
+python -m mc stats
 ```
 
 Show messages statistics for specific conversation.
 (you can list all conversations by running previous example) 
 ```shell
-python mc.py stats JohnDoe
+python -m mc stats JohnDoe
 ```
 
 Program allows you to write only the beginning of the conversation name.
 It will return first matching occurrence. (Works exactly as the previous example)
 ```shell
-python mc.py stats Joh
+python -m mc stats Joh
 ```
 
 Shows how many messages did the person send grouped by conversation.
 ```shell
-python mc.py user "John Doe"
+python -m mc user "John Doe"
 ```
 
 Shows how many messages on average have you send and received grouped by time of the day.
 ```shell
-python mc.py daily "facebook-YourName.zip"
+python -m mc daily "facebook-YourName.zip"
 ```
 
 Similar to previous one, but limited to one conversation.
 ```shell
-python mc.py daily "facebook-YourName.zip" John
+python -m mc daily "facebook-YourName.zip" John
 ```
 
+## Basic module usage
 
-### How to download messages
+Get started:
+```python
+import MessengerCounter as mc
+mc.set_source('facebook-YourName.zip') # insert path for your .zip file
+mc.count()
+mc.count(chars=True)
+data = mc.get_data()
+mc.statistics(*data)
+```
+
+## How to download messages
 
 1. Select Settings & Privacy in the top right of Facebook, then click Settings.
 1. In the left column, click Your Facebook Information.
 1. Click on Download Your Information.
 ![fb1](https://user-images.githubusercontent.com/17026216/99185953-4e075300-274d-11eb-99f1-eb475a465652.png)
-1. Deselect all and select Messages category by clicking the box on the right side.
+1. Deselect all and select "Messages" category by clicking the box on the right side.
 1. It is necessary to choose JSON format of your download request.
 ![fb2](https://user-images.githubusercontent.com/17026216/99186010-b2c2ad80-274d-11eb-8684-4077192373f0.png)
 1. Click Create File to confirm the download request.
