@@ -157,7 +157,7 @@ def statistics(data_source, conversation=None, chars=False):
             messages_statistics(data_source)
     else:
         if chars:
-            raise NotImplementedError()
+            characters_conversation_statistics(data_source, conversation)
         else:
             print(conversation)
             conversation_statistics(data_source, conversation)
@@ -221,8 +221,12 @@ def characters_conversation_statistics(data_source, conversation):
     :param conversation: conversation id, or key from get_data() function
     :return: None
     """
-    pass
-
+    data_source = pd.DataFrame(data_source)
+    data_source = data_source[conversation].dropna()
+    data_source = data_source.sort_values(ascending=False).astype('int')
+    pd.set_option('display.max_rows', None)
+    print(data_source)
+    print(f'Total characters: {data_source.sum()}')
 
 # User statistics
 
