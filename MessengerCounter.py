@@ -88,12 +88,12 @@ def count_messages():
                 i += 1
                 messages += collections.Counter(pd.DataFrame(json.loads(
                     source.open('messages/inbox/' + sender + '/message_' + str(i) + '.json').read())[
-                                                                 'messages']).iloc[:, 0])
+                                                                 'messages'])['sender_name'])
             except KeyError:
                 try:
                     messages += collections.Counter(pd.DataFrame(json.loads(
                     source.open('messages/archived_threads/' + sender + '/message_' + str(i) + '.json').read())[
-                                                                 'messages']).iloc[:, 0])
+                                                                 'messages'])['sender_name'])
                 except KeyError:
                     break
         total[sender] = {k.encode('iso-8859-1').decode('utf-8'): v for k, v in messages.items()}
