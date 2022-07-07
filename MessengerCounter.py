@@ -80,7 +80,7 @@ def count_messages():
     """
     namelist = source.namelist()
     total, senders = {}, {x.split('/')[2] for x in namelist
-                          if (x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/')}
+                          if ((x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/') or (x.endswith('/') and x.startswith('messages/archived_threads/') and x != 'messages/archived_threads/'))}
     for sender in senders:
         messages, i = collections.Counter(), 0
         while True:
@@ -90,7 +90,12 @@ def count_messages():
                     source.open('messages/inbox/' + sender + '/message_' + str(i) + '.json').read())[
                                                                  'messages']).iloc[:, 0])
             except KeyError:
-                break
+                try:
+                    messages += collections.Counter(pd.DataFrame(json.loads(
+                    source.open('messages/archived_threads/' + sender + '/message_' + str(i) + '.json').read())[
+                                                                 'messages']).iloc[:, 0])
+                except KeyError:
+                    break
         total[sender] = {k.encode('iso-8859-1').decode('utf-8'): v for k, v in messages.items()}
         total[sender]['total'] = sum(messages.values())
     with open('messages.json', 'w', encoding='utf-8') as output:
@@ -104,7 +109,7 @@ def count_characters():
     """
     namelist = source.namelist()
     total, senders = {}, {x.split('/')[2] for x in namelist
-                          if (x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/')}
+                          if ((x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/') or (x.endswith('/') and x.startswith('messages/archived_threads/') and x != 'messages/archived_threads/'))}
     for sender in senders:
         counted_all, i = collections.Counter(), 0
         while True:
@@ -116,7 +121,14 @@ def count_characters():
                     lambda row: collections.Counter(str(row['content']).encode('iso-8859-1').decode('utf-8')), axis=1)
                 counted_all += sum(frame['counted'], collections.Counter())
             except KeyError:
-                break
+                try:
+                    frame = pd.DataFrame(json.loads(
+                        source.open('messages/archived_threads/' + sender + '/message_' + str(i) + '.json').read())['messages'])
+                    frame['counted'] = frame.apply(
+                        lambda row: collections.Counter(str(row['content']).encode('iso-8859-1').decode('utf-8')), axis=1)
+                    counted_all += sum(frame['counted'], collections.Counter())
+                except KeyError:
+                    break
         total[sender] = dict(counted_all)
     with open('messages_chars.json', 'w', encoding='utf-8') as output:
         json.dump(total, output, ensure_ascii=False)
@@ -157,7 +169,7 @@ def statistics(data_source, conversation=None, chars=False):
             messages_statistics(data_source)
     else:
         if chars:
-            raise NotImplementedError()
+            characters_conversation_statistics(data_source, conversation)
         else:
             print(conversation)
             conversation_statistics(data_source, conversation)
@@ -221,8 +233,12 @@ def characters_conversation_statistics(data_source, conversation):
     :param conversation: conversation id, or key from get_data() function
     :return: None
     """
-    pass
-
+    data_source = pd.DataFrame(data_source)
+    data_source = data_source[conversation].dropna()
+    data_source = data_source.sort_values(ascending=False).astype('int')
+    pd.set_option('display.max_rows', None)
+    print(data_source)
+    print(f'Total characters: {data_source.sum()}')
 
 # User statistics
 
@@ -266,7 +282,14 @@ def interval_count(inbox_name, function, delta=0.0):
                             'messages']).iloc[:, 1], unit='ms').dt.tz_localize('UTC').dt.tz_convert(
                             'Europe/Warsaw').add(pd.Timedelta(hours=-delta))))
         except KeyError:
-            break
+            try:
+                # iterates over all .json files in requested directory
+                messages += collections.Counter(function(pd.to_datetime(pd.DataFrame(json.loads(
+                    source.open('messages/archived_threads/' + inbox_name + '/message_' + str(i) + '.json').read())[
+                                'messages']).iloc[:, 1], unit='ms').dt.tz_localize('UTC').dt.tz_convert(
+                                'Europe/Warsaw').add(pd.Timedelta(hours=-delta))))
+            except KeyError:
+                break
     return messages
 
 def interval_plot(messages):
@@ -331,7 +354,7 @@ def hours_chats(delta=0.0):
     """
     messages = collections.Counter()
     for sender in {x.split('/')[2] for x in source.namelist()
-                   if (x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/')}:
+                   if ((x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/') or (x.endswith('/') and x.startswith('messages/archived_threads/') and x != 'messages/archived_threads/'))}:
         messages += interval_count(sender, lambda x: x.dt.hour, delta)
     hours_plot(messages, delta)
 
@@ -403,7 +426,7 @@ def daily_chats(delta=0.0):
     """
     messages = collections.Counter()
     for sender in {x.split('/')[2] for x in source.namelist() if
-                   (x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/')}:
+                   ((x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/') or (x.endswith('/') and x.startswith('messages/archived_threads/') and x != 'messages/archived_threads/'))}:
         messages += interval_count(sender, lambda x: x.dt.date, delta)
     interval_plot(messages)
 
@@ -429,7 +452,7 @@ def monthly_chats():
     """
     messages = collections.Counter()
     for sender in {x.split('/')[2] for x in source.namelist() if
-                   (x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/')}:
+                   ((x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/') or (x.endswith('/') and x.startswith('messages/archived_threads/') and x != 'messages/archived_threads/'))}:
         messages += interval_count(sender, lambda x: x.dt.to_period("M").astype('datetime64[ns]'))
     interval_plot(messages)
 
@@ -474,7 +497,7 @@ def yearly_chats():
     """
     messages = collections.Counter()
     for sender in {x.split('/')[2] for x in source.namelist()
-                   if (x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/')}:
+                   if ((x.endswith('/') and x.startswith('messages/inbox/') and x != 'messages/inbox/') or (x.endswith('/') and x.startswith('messages/archived_threads/') and x != 'messages/archived_threads/'))}:
         messages += interval_count(sender, lambda x: x.dt.year)
     messages = pd.DataFrame(messages, index=[0])
     print(messages.iloc[0].describe())
