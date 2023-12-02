@@ -1,14 +1,11 @@
+from matplotlib import pyplot as plt
+from zipfile import ZipFile
+import pandas as pd
 import collections
-import os
-import io
+import argparse
+import logging
 import json
 import math
-import zipfile
-import logging
-from urllib.error import URLError
-from urllib.request import urlopen
-import pandas as pd
-from matplotlib import pyplot as plt
 
 
 MESSAGES_INBOX = 'your_activity_across_facebook/messages/inbox/'
@@ -18,10 +15,10 @@ MESSAGES_ARCHIVED = 'your_activity_across_facebook/messages/archived_threads/'
 
 def set_source(filename):
     """
-    Sets source global variable to the path of .zip file.
+    Returns ZipFile object based on given filename.
 
     :param filename: path to the downloaded .zip file
-    :return: None
+    :return: ZipFile object
 
     You can provide relative path to file
     >>> set_source('facebook-YourName.zip')
@@ -30,15 +27,7 @@ def set_source(filename):
     >>> set_source('C:/Users/Admin/Downloads/facebook-YourName.zip') # Windows
     >>> set_source('/home/Admin/Downloads/facebook-YourName.zip') # Mac/Linux
     """
-    if os.path.isabs(filename):
-        url = f'file:///{filename}'
-    else:
-        url = f'file:./{filename}' if filename.endswith('.zip') else f'file:./{filename}.zip'
-    try:
-        global source
-        source = zipfile.ZipFile(io.BytesIO(urlopen(url).read()))
-    except URLError:
-        logging.error('File not found, try again.')
+    return ZipFile(filename if filename.endswith('.zip') else filename + '.zip')
 
 def get_data(conversation=None, chars=False, user=False):
     """
@@ -514,15 +503,21 @@ def yearly_chats():
 
 
 if __name__=='__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('file',
+                        help='Path to .zip file downloaded from Facebook',
+                        nargs='?')
+    args = parser.parse_args()
     while True:
-        filename = input('Enter filename: ')
-        filename = f'file:///{filename}' if filename[1] == ':'\
-             else (f'file:./{filename}' if filename.endswith('.zip') else f'file:./{filename}.zip')
+        if args.file is not None:
+            filename = args.file
+        else:
+            filename = input('Enter filename: ')
         try:
-            source = zipfile.ZipFile(io.BytesIO(urlopen(filename).read()))
+            source = set_source(filename)
             break
-        except URLError:
-            print('File not found, try again.')
+        except FileNotFoundError:
+            print('File not found.')
     while True:
         user_input = input('>').split(' ')
         if user_input[0] == 'exit':
