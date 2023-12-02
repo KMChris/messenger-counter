@@ -1,4 +1,5 @@
 import collections
+import os
 import io
 import json
 import math
@@ -25,14 +26,17 @@ def set_source(filename):
     You can provide relative path to file
     >>> set_source('facebook-YourName.zip')
 
-    Absolute path (works only on Windows)
-    >>> set_source('C:/Users/Admin/Downloads/facebook-YourName.zip')
+    Absolute path
+    >>> set_source('C:/Users/Admin/Downloads/facebook-YourName.zip') # Windows
+    >>> set_source('/home/Admin/Downloads/facebook-YourName.zip') # Mac/Linux
     """
-    filename = f'file:///{filename}' if filename[1] == ':' \
-        else (f'file:./{filename}' if filename.endswith('.zip') else f'file:./{filename}.zip')
+    if os.path.isabs(filename):
+        url = f'file:///{filename}'
+    else:
+        url = f'file:./{filename}' if filename.endswith('.zip') else f'file:./{filename}.zip'
     try:
         global source
-        source = zipfile.ZipFile(io.BytesIO(urlopen(filename).read()))
+        source = zipfile.ZipFile(io.BytesIO(urlopen(url).read()))
     except URLError:
         logging.error('File not found, try again.')
 
