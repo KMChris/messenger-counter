@@ -8,8 +8,8 @@ import json
 import math
 
 
-MESSAGES_INBOX = 'your_activity_across_facebook/messages/inbox/'
-MESSAGES_ARCHIVED = 'your_activity_across_facebook/messages/archived_threads/'
+FOLDERS = ['inbox', 'archived_threads', 'filtered_threads', 'message_requests']
+MESSAGES_PATHS = [f'your_activity_across_facebook/messages/{folder}/' for folder in FOLDERS]
 
 # Getting data
 
@@ -76,22 +76,17 @@ def count_messages():
     """
     namelist = source.namelist()
     total, senders = {}, {x.split('/')[3] for x in namelist
-                          if ((x.endswith('/') and x.startswith(MESSAGES_INBOX) and x != MESSAGES_INBOX) or (x.endswith('/') and x.startswith(MESSAGES_ARCHIVED) and x != MESSAGES_ARCHIVED))}
+                          if any(x.endswith('/') and x.startswith(path)
+                                 and x != path for path in MESSAGES_PATHS)}
     for sender in senders:
         messages, i = collections.Counter(), 0
-        while True:
-            try:
-                i += 1
-                messages += collections.Counter(pd.DataFrame(json.loads(
-                    source.open(MESSAGES_INBOX + sender + '/message_' + str(i) + '.json').read())[
-                                                                 'messages'])['sender_name'])
-            except KeyError:
-                try:
-                    messages += collections.Counter(pd.DataFrame(json.loads(
-                    source.open(MESSAGES_ARCHIVED + sender + '/message_' + str(i) + '.json').read())[
-                                                                 'messages'])['sender_name'])
-                except KeyError:
-                    break
+        files = [x for path in MESSAGES_PATHS
+                 for x in namelist
+                 if x.endswith('.json') and x.startswith(path + sender + '/message_')]
+        for file in files:
+            with source.open(file) as f:
+                df = pd.DataFrame(json.loads(f.read())['messages'])
+                messages += collections.Counter(df['sender_name'])
         total[sender] = {k.encode('iso-8859-1').decode('utf-8'): v for k, v in messages.items()}
         total[sender]['total'] = sum(messages.values())
     with open('messages.json', 'w', encoding='utf-8') as output:
