@@ -95,6 +95,39 @@ def count_messages():
     with open('messages.json', 'w', encoding='utf-8') as output:
         json.dump(total, output, ensure_ascii=False)
 
+def count_words():
+    """
+    Counts words from messages and saves output to messages_words.json.
+
+    :return: None
+    """
+    # TODO add counting words for specific conversation due to high processing time
+    namelist = source.namelist()
+    total, senders = {}, {x.split('/')[3] for x in namelist
+                          if any(x.endswith('/') and x.startswith(path)
+                                 and x != path for path in MESSAGES_PATHS)}
+    if len(senders) == 0:
+        logging.error('No messages found.')
+        return
+    for sender in senders:
+        counted_by_user, i = {}, 0
+        files = [x for path in MESSAGES_PATHS
+                 for x in namelist
+                 if x.endswith('.json') and x.startswith(path + sender + '/message_')]
+        print('Counting', len(total), 'of', len(senders)) # TODO add progress bar
+        for file in files:
+            with source.open(file) as f:
+                df = pd.DataFrame(json.loads(f.read())['messages'])
+                if 'content' in df.columns:
+                    df['counted'] = df['content'].dropna().str.encode('iso-8859-1').str.decode('utf-8').str.lower().str.split().apply(
+                        lambda x: collections.Counter([y.strip('.,?!:;()[]{}"\'') for y in x])
+                    )
+                    for k, v in df.groupby('sender_name')['counted'].sum().to_dict().items():
+                        counted_by_user[k] = counted_by_user.get(k, collections.Counter()) + v
+        total[sender] = counted_by_user
+    with open('messages_words.json', 'w', encoding='utf-8') as output:
+        json.dump(total, output, ensure_ascii=False)
+
 def count_characters():
     """
     Counts characters from messages and saves output to messages_chars.json.
@@ -127,24 +160,26 @@ def count_characters():
     with open('messages_chars.json', 'w', encoding='utf-8') as output:
         json.dump(total, output, ensure_ascii=False)
 
-def count(chars=False):
+def count(types=('messages',)):
     """
     Counts messages or characters from messages
     and saves output to the file.
 
-    :param chars: True for counting characters,
-                  False for counting messages (default False)
+    :param types: list of types to count, possible values:
+                  'messages', 'chars', 'words' (default 'messages')
     :return: None
     """
-    if chars:
-        count_characters()
-    else:
+    if 'messages' in types:
         count_messages()
+    if 'chars' in types:
+        count_characters()
+    if 'words' in types:
+        count_words()
 
 
 # Statistics
 
-def statistics(data_source, conversation=None, chars=False):
+def statistics(data_source, conversation=None, key='messages'):
     """
     Prints statistics of given data source.
 
@@ -152,18 +187,21 @@ def statistics(data_source, conversation=None, chars=False):
                         by the get_data() function
     :param conversation: conversation id or None for overall statistics
                          (default None)
-    :param chars: True for character statistics instead of messages,
-                  False otherwise (default False)
+    :param key:
     :return: None
     """
     if conversation is None:
-        if chars:
+        if key=='chars':
             characters_statistics(data_source)
+        elif key=='words':
+            words_statistics(data_source)
         else:
             messages_statistics(data_source)
     else:
-        if chars:
+        if key=='chars':
             characters_conversation_statistics(data_source, conversation)
+        elif key=='words':
+            words_conversation_statistics(data_source, conversation)
         else:
             print(conversation)
             conversation_statistics(data_source, conversation)
@@ -232,6 +270,22 @@ def characters_conversation_statistics(data_source, conversation):
     pd.set_option('display.max_rows', None)
     print(data_source)
     print(f'Total characters: {data_source.sum()}')
+
+def words_statistics(data_source):
+    pass
+
+def words_conversation_statistics(data_source, user):
+    data_source = pd.DataFrame(data_source)
+    print(data_source.columns)
+    for key in data_source.columns:
+        if key.startswith(user):
+            data_source = data_source[key].dropna()
+            data_source = data_source.sort_values(ascending=False).astype('int')
+            pd.set_option('display.max_rows', 100)
+            print(data_source) # TODO show number of occurrences
+            print(f'Total words: {data_source.sum()}')
+    else:
+        print('User not found.')
 
 # User statistics
 
@@ -515,12 +569,15 @@ if __name__=='__main__':
             break
         if user_input[0] == '' or user_input[0] == 'count':
             count_messages()
+        if user_input[0] == 'words':
+            count_words() # TODO add in mc.py
         if user_input[0] == 'chars':
             count_characters()
         if user_input[0] == 'help' or user_input[0] == '?':
             print('Messenger Counter available commands:')
             print('  count - counts all messages and saves to messages.json')
             print('  chars - counts all characters and saves to messages_chars.json')
+            print('  words - counts all words and saves to messages_words.json (time consuming)')
             print('  stats [conversation, -c] - displays statistics for counted messages')
             print('        [detailed statistics for specific conversation, character statistics]')
             print('  user [name] - detailed statistics for specific user')
@@ -547,6 +604,18 @@ if __name__=='__main__':
                 except FileNotFoundError:
                     if input('Characters not counted. Count characters?[y/n] ').lower() == 'y':
                         count_characters()
+            if len(user_input) > 3 and user_input[3] == '-w':
+                try:
+                    data = json.loads(open('messages_words.json', 'r', encoding='utf-8').read())
+                    for key in data.keys():
+                        if key.startswith(user_input[1]):
+                            words_conversation_statistics(data[key], user_input[2])
+                            break
+                    else:
+                        print('Conversation not found.')
+                except FileNotFoundError:
+                    if input('Words not counted. Count words?[y/n] ').lower() == 'y':
+                        count_words()
             elif len(user_input) > 1 and not user_input[1] == '-c':
                 try:
                     data = json.loads(open('messages.json', 'r', encoding='utf-8').read())

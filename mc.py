@@ -10,12 +10,15 @@ if __name__ == '__main__':
         help='Available commands:')
 
     parser_count = subparsers.add_parser('count',
-        help='counts all messages and saves to messages.json')
+        help='counts all messages and saves to .json file')
     parser_count.add_argument('file',
-        help='path to .zip file downloaded from Facebook, '
-             'add -c argument to count chars')
+        help='path to .zip file downloaded from Facebook')
+    parser_count.add_argument('-m', '--messages', action='store_true',
+        help='count messages (default if no argument is specified)')
     parser_count.add_argument('-c', '--chars', action='store_true',
-        help='refer to characters instead of messages')
+        help='count characters')
+    parser_count.add_argument('-w', '--words', action='store_true',
+        help='count words')
 
     parser_stats = subparsers.add_parser('stats',
         help='displays statistics for counted messages, '
@@ -60,16 +63,22 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.command == 'count':
-        # TODO avoid setting source multiple times
         MessengerCounter.set_source(args.file)
-        MessengerCounter.count(args.chars)
+        types = []
+        if args.messages or not (args.messages or args.chars or args.words):
+            types.append('messages')
+        if args.chars:
+            types.append('chars')
+        if args.words:
+            types.append('words')
+        MessengerCounter.count(types)
     elif args.command == 'stats':
         MessengerCounter.statistics(
             *MessengerCounter.get_data(
                 args.conversation,
                 args.chars
             ),
-            args.chars
+            args.chars #TODO: support all types
         )
     elif args.command == 'user':
         MessengerCounter.user_statistics(
