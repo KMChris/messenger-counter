@@ -78,6 +78,9 @@ def count_messages():
     total, senders = {}, {x.split('/')[3] for x in namelist
                           if any(x.endswith('/') and x.startswith(path)
                                  and x != path for path in MESSAGES_PATHS)}
+    if len(senders) == 0:
+        logging.error('No messages found.')
+        return
     for sender in senders:
         messages, i = collections.Counter(), 0
         files = [x for path in MESSAGES_PATHS
@@ -106,6 +109,9 @@ def count_characters():
     total, senders = {}, {x.split('/')[3] for x in namelist
                           if any(x.endswith('/') and x.startswith(path)
                                  and x != path for path in MESSAGES_PATHS)}
+    if len(senders) == 0:
+        logging.error('No messages found.')
+        return
     for sender in senders:
         counted_all, i = collections.Counter(), 0
         files = [x for path in MESSAGES_PATHS
