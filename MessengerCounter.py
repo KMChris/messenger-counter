@@ -335,7 +335,8 @@ def hours_chats(delta=0.0):
     """
     messages = collections.Counter()
     for sender in {x.split('/')[3] for x in source.namelist()
-                   if ((x.endswith('/') and x.startswith(MESSAGES_INBOX) and x != MESSAGES_INBOX) or (x.endswith('/') and x.startswith(MESSAGES_ARCHIVED) and x != MESSAGES_ARCHIVED))}:
+                   if any(x.endswith('/') and x.startswith(path)
+                          and x != path for path in MESSAGES_PATHS)}:
         messages += interval_count(sender, lambda x: x.dt.hour, delta)
     hours_plot(messages, delta)
 
@@ -406,8 +407,9 @@ def daily_chats(delta=0.0):
     :return: None
     """
     messages = collections.Counter()
-    for sender in {x.split('/')[3] for x in source.namelist() if
-                   ((x.endswith('/') and x.startswith(MESSAGES_INBOX) and x != MESSAGES_INBOX) or (x.endswith('/') and x.startswith(MESSAGES_ARCHIVED) and x != MESSAGES_ARCHIVED))}:
+    for sender in {x.split('/')[3] for x in source.namelist()
+                   if any(x.endswith('/') and x.startswith(path)
+                            and x != path for path in MESSAGES_PATHS)}:
         messages += interval_count(sender, lambda x: x.dt.date, delta)
     interval_plot(messages)
 
@@ -432,8 +434,9 @@ def monthly_chats():
     :return: None
     """
     messages = collections.Counter()
-    for sender in {x.split('/')[3] for x in source.namelist() if
-                   ((x.endswith('/') and x.startswith(MESSAGES_INBOX) and x != MESSAGES_INBOX) or (x.endswith('/') and x.startswith(MESSAGES_ARCHIVED) and x != MESSAGES_ARCHIVED))}:
+    for sender in {x.split('/')[3] for x in source.namelist()
+                   if any(x.endswith('/') and x.startswith(path)
+                          and x != path for path in MESSAGES_PATHS)}:
         messages += interval_count(sender, lambda x: x.dt.to_period("M").astype('datetime64[ns]'))
     interval_plot(messages)
 
@@ -478,7 +481,8 @@ def yearly_chats():
     """
     messages = collections.Counter()
     for sender in {x.split('/')[3] for x in source.namelist()
-                   if ((x.endswith('/') and x.startswith(MESSAGES_INBOX) and x != MESSAGES_INBOX) or (x.endswith('/') and x.startswith(MESSAGES_ARCHIVED) and x != MESSAGES_ARCHIVED))}:
+                   if any(x.endswith('/') and x.startswith(path)
+                          and x != path for path in MESSAGES_PATHS)}:
         messages += interval_count(sender, lambda x: x.dt.year)
     messages = pd.DataFrame(messages, index=[0])
     print(messages.iloc[0].describe())
