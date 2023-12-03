@@ -13,11 +13,11 @@ MESSAGES_PATHS = [f'your_activity_across_facebook/messages/{folder}/' for folder
 
 # Getting data
 
-def set_source(filename):
+def set_source(file):
     """
     Returns ZipFile object based on given filename.
 
-    :param filename: path to the downloaded .zip file
+    :param file: path to the downloaded .zip file
     :return: ZipFile object
 
     You can provide relative path to file
@@ -27,7 +27,7 @@ def set_source(filename):
     >>> set_source('C:/Users/Admin/Downloads/facebook-YourName.zip') # Windows
     >>> set_source('/home/Admin/Downloads/facebook-YourName.zip') # Mac/Linux
     """
-    return ZipFile(filename if filename.endswith('.zip') else filename + '.zip')
+    return ZipFile(file if file.endswith('.zip') else file + '.zip')
 
 def get_data(conversation=None, chars=False, user=False):
     """
@@ -211,7 +211,6 @@ def characters_statistics(data_source):
     print(data_source)
     print(f'Total characters: {data_source.sum()}')
 
-# TODO characters conversation statistics
 def characters_conversation_statistics(data_source, conversation):
     """
     Prints characters statistics for specific conversation of given data source.
@@ -284,7 +283,6 @@ def interval_plot(messages):
     messages = pd.Series(messages).sort_index()
     print(messages.describe())
     plt.bar(messages.index, messages)
-    plt.savefig('messages.pdf')
     plt.show()
 
 
@@ -358,7 +356,6 @@ def hours_plot(messages, delta):
                                  for x in range(-(-math.floor(delta) % 24),
                                  math.floor(delta) % 24 if math.floor(delta) % 24 != 0 else 24)], rotation=90)
     plt.xlim(-1, 24)
-    plt.savefig('messages.pdf')
     plt.show()
 
 
@@ -487,7 +484,6 @@ def yearly_chats():
     messages = pd.DataFrame(messages, index=[0])
     print(messages.iloc[0].describe())
     plt.bar(messages.columns, messages.iloc[0])
-    plt.savefig('messages.pdf')
     plt.show()
 
 
