@@ -98,28 +98,25 @@ def count_characters():
 
     :return: None
     """
+    def count_row(row):
+        row = str(row['content']).encode('iso-8859-1').decode('utf-8')
+        return collections.Counter(row)
+
     namelist = source.namelist()
     total, senders = {}, {x.split('/')[3] for x in namelist
-                          if ((x.endswith('/') and x.startswith(MESSAGES_INBOX) and x != MESSAGES_INBOX) or (x.endswith('/') and x.startswith(MESSAGES_ARCHIVED) and x != MESSAGES_ARCHIVED))}
+                          if any(x.endswith('/') and x.startswith(path)
+                                 and x != path for path in MESSAGES_PATHS)}
     for sender in senders:
         counted_all, i = collections.Counter(), 0
-        while True:
-            try:
-                i += 1
-                frame = pd.DataFrame(json.loads(
-                    source.open(MESSAGES_INBOX + sender + '/message_' + str(i) + '.json').read())['messages'])
-                frame['counted'] = frame.apply(
-                    lambda row: collections.Counter(str(row['content']).encode('iso-8859-1').decode('utf-8')), axis=1)
-                counted_all += sum(frame['counted'], collections.Counter())
-            except KeyError:
-                try:
-                    frame = pd.DataFrame(json.loads(
-                        source.open(MESSAGES_ARCHIVED + sender + '/message_' + str(i) + '.json').read())['messages'])
-                    frame['counted'] = frame.apply(
-                        lambda row: collections.Counter(str(row['content']).encode('iso-8859-1').decode('utf-8')), axis=1)
-                    counted_all += sum(frame['counted'], collections.Counter())
-                except KeyError:
-                    break
+        files = [x for path in MESSAGES_PATHS
+                 for x in namelist
+                 if x.endswith('.json') and x.startswith(path + sender + '/message_')]
+        for file in files:
+            with source.open(file) as f:
+                df = pd.DataFrame(json.loads(f.read())['messages'])
+                if 'content' in df.columns:
+                    df['counted'] = df.apply(count_row, axis=1)
+                    counted_all += sum(df['counted'], collections.Counter())
         total[sender] = dict(counted_all)
     with open('messages_chars.json', 'w', encoding='utf-8') as output:
         json.dump(total, output, ensure_ascii=False)
@@ -264,23 +261,16 @@ def interval_count(inbox_name, function, delta=0.0):
     :return: dictionary of number of messages grouped by timeframe
     """
     messages, i = collections.Counter(), 0
-    while True:
-        try:
-            i += 1
-            # iterates over all .json files in requested directory
-            messages += collections.Counter(function(pd.to_datetime(pd.DataFrame(json.loads(
-                source.open(MESSAGES_INBOX + inbox_name + '/message_' + str(i) + '.json').read())[
-                            'messages']).iloc[:, 1], unit='ms').dt.tz_localize('UTC').dt.tz_convert(
-                            'Europe/Warsaw').add(pd.Timedelta(hours=-delta))))
-        except KeyError:
-            try:
-                # iterates over all .json files in requested directory
-                messages += collections.Counter(function(pd.to_datetime(pd.DataFrame(json.loads(
-                    source.open(MESSAGES_ARCHIVED + inbox_name + '/message_' + str(i) + '.json').read())[
-                                'messages']).iloc[:, 1], unit='ms').dt.tz_localize('UTC').dt.tz_convert(
-                                'Europe/Warsaw').add(pd.Timedelta(hours=-delta))))
-            except KeyError:
-                break
+    files = [x for path in MESSAGES_PATHS
+             for x in source.namelist()
+             if x.endswith('.json') and x.startswith(path + inbox_name + '/message_')]
+    for file in files:
+        with source.open(file) as f:
+            df = pd.DataFrame(json.loads(f.read())['messages'])
+            df = pd.to_datetime(df.iloc[:, 1], unit='ms')
+            df = df.dt.tz_localize(None)
+            df = df.add(pd.Timedelta(hours=-delta))
+            messages += collections.Counter(function(df))
     return messages
 
 def interval_plot(messages):
