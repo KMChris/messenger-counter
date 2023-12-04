@@ -1,5 +1,6 @@
 from matplotlib import pyplot as plt
 from zipfile import ZipFile
+from tqdm import tqdm
 import pandas as pd
 import collections
 import argparse
@@ -27,7 +28,8 @@ def set_source(file):
     >>> set_source('C:/Users/Admin/Downloads/facebook-YourName.zip') # Windows
     >>> set_source('/home/Admin/Downloads/facebook-YourName.zip') # Mac/Linux
     """
-    return ZipFile(file if file.endswith('.zip') else file + '.zip')
+    global source
+    source = ZipFile(file if file.endswith('.zip') else file + '.zip')
 
 def get_data(conversation=None, chars=False, user=False):
     """
@@ -81,7 +83,7 @@ def count_messages():
     if len(senders) == 0:
         logging.error('No messages found.')
         return
-    for sender in senders:
+    for sender in tqdm(senders):
         messages, i = collections.Counter(), 0
         files = [x for path in MESSAGES_PATHS
                  for x in namelist
@@ -109,12 +111,11 @@ def count_words():
     if len(senders) == 0:
         logging.error('No messages found.')
         return
-    for sender in senders:
+    for sender in tqdm(senders):
         counted_by_user, i = {}, 0
         files = [x for path in MESSAGES_PATHS
                  for x in namelist
                  if x.endswith('.json') and x.startswith(path + sender + '/message_')]
-        print('Counting', len(total), 'of', len(senders)) # TODO add progress bar
         for file in files:
             with source.open(file) as f:
                 df = pd.DataFrame(json.loads(f.read())['messages'])
@@ -122,8 +123,10 @@ def count_words():
                     df['counted'] = df['content'].dropna().str.encode('iso-8859-1').str.decode('utf-8').str.lower().str.split().apply(
                         lambda x: collections.Counter([y.strip('.,?!:;()[]{}"\'') for y in x])
                     )
-                    for k, v in df.groupby('sender_name')['counted'].sum().to_dict().items():
-                        counted_by_user[k] = counted_by_user.get(k, collections.Counter()) + v
+                    df = df.groupby('sender_name')['counted'].sum()
+                    for k, v in df.to_dict().items():
+                        if v != 0:
+                            counted_by_user[k] = counted_by_user.get(k, collections.Counter()) + v
         total[sender] = counted_by_user
     with open('messages_words.json', 'w', encoding='utf-8') as output:
         json.dump(total, output, ensure_ascii=False)
@@ -145,7 +148,7 @@ def count_characters():
     if len(senders) == 0:
         logging.error('No messages found.')
         return
-    for sender in senders:
+    for sender in tqdm(senders):
         counted_all, i = collections.Counter(), 0
         files = [x for path in MESSAGES_PATHS
                  for x in namelist
@@ -559,7 +562,7 @@ if __name__=='__main__':
         else:
             filename = input('Enter filename: ')
         try:
-            source = set_source(filename)
+            set_source(filename)
             break
         except FileNotFoundError:
             print('File not found.')
