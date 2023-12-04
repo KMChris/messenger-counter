@@ -27,7 +27,8 @@ def set_source(file):
     >>> set_source('C:/Users/Admin/Downloads/facebook-YourName.zip') # Windows
     >>> set_source('/home/Admin/Downloads/facebook-YourName.zip') # Mac/Linux
     """
-    return ZipFile(file if file.endswith('.zip') else file + '.zip')
+    global source
+    source = ZipFile(file if file.endswith('.zip') else file + '.zip')
 
 def get_data(conversation=None, chars=False, user=False):
     """
@@ -499,7 +500,7 @@ if __name__=='__main__':
         else:
             filename = input('Enter filename: ')
         try:
-            source = set_source(filename)
+            set_source(filename)
             break
         except FileNotFoundError:
             print('File not found.')
