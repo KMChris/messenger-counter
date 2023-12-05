@@ -7,12 +7,84 @@ import argparse
 import logging
 import json
 import math
+import os
 
-
-FOLDERS = ['inbox', 'archived_threads', 'filtered_threads', 'message_requests']
-MESSAGES_PATHS = [f'your_activity_across_facebook/messages/{folder}/' for folder in FOLDERS]
 
 # Getting data
+
+class Source:
+    """
+    Read data from given .zip file or
+    the directory from extracted .zip file.
+    """
+    def __init__(self, path):
+        # Detecting if path is .zip file or directory
+        if path.endswith('.zip'):
+            self.zip = ZipFile(path)
+            self.path = 'your_activity_across_facebook/messages'
+        elif os.path.isdir(path):
+            self.zip = None
+            # Find messages folder
+            for root, dirs, files in os.walk(path):
+                if 'messages' in dirs:
+                    self.path = os.path.join(root, 'messages')
+                    break
+            else:
+                raise FileNotFoundError('Messages not found.')
+        else:
+            raise FileNotFoundError('Path is not a .zip file or directory.')
+
+        folders = ['inbox', 'archived_threads',
+                   'filtered_threads', 'message_requests']
+        self.paths = [os.path.join(self.path, folder)
+                 for folder in folders]
+        self.namelist = self._get_namelist()
+        self.senders = self._get_senders()
+        self.files = {sender: self._get_files(sender)
+                      for sender in self.senders}
+
+    def open(self, file):
+        """
+        Extracts file from .zip file
+        or opens file from the directory.
+        """
+        if self.zip is not None:
+            return self.zip.open(file)
+        return open(os.path.join(self.path, file), 'rb')
+
+    def _get_namelist(self):
+        """
+        Returns list of files in folder.
+        """
+        if self.zip is not None:
+            return self.zip.namelist()
+        namelist = []
+        for root, dirs, filenames in os.walk(self.path):
+            for d in dirs:
+                namelist.append(os.path.relpath(os.path.join(root, d), self.path))
+            for file in filenames:
+                namelist.append(os.path.relpath(os.path.join(root, file), self.path))
+        return namelist
+
+    def _get_senders(self):
+        """
+        Returns list of conversation ids.
+        """
+        if self.zip is not None:
+            return {x.split('/')[3] for x in self.namelist
+                    if any(x.endswith('/') and x.startswith(path)
+                           and x != path for path in self.paths)}
+        return {d for path in self.paths
+                for d in os.listdir(path)}
+
+    def _get_files(self, sender):
+        """
+        Returns list of files from specific sender.
+        """
+        return [x for path in self.paths
+                for x in self.namelist
+                if x.endswith('.json') and x.startswith(os.path.join(path, sender, 'message_'))]
+
 
 def set_source(file):
     """
@@ -29,7 +101,7 @@ def set_source(file):
     >>> set_source('/home/Admin/Downloads/facebook-YourName.zip') # Mac/Linux
     """
     global source
-    source = ZipFile(file if file.endswith('.zip') else file + '.zip')
+    source = Source(file)
 
 def get_data(conversation=None, chars=False, user=False):
     """
@@ -76,19 +148,13 @@ def count_messages():
 
     :return: None
     """
-    namelist = source.namelist()
-    total, senders = {}, {x.split('/')[3] for x in namelist
-                          if any(x.endswith('/') and x.startswith(path)
-                                 and x != path for path in MESSAGES_PATHS)}
+    total, senders = {}, source.senders
     if len(senders) == 0:
         logging.error('No messages found.')
         return
     for sender in tqdm(senders):
         messages, i = collections.Counter(), 0
-        files = [x for path in MESSAGES_PATHS
-                 for x in namelist
-                 if x.endswith('.json') and x.startswith(path + sender + '/message_')]
-        for file in files:
+        for file in source.files[sender]:
             with source.open(file) as f:
                 df = pd.DataFrame(json.loads(f.read())['messages'])
                 messages += collections.Counter(df['sender_name'])
@@ -104,19 +170,13 @@ def count_words():
     :return: None
     """
     # TODO add counting words for specific conversation due to high processing time
-    namelist = source.namelist()
-    total, senders = {}, {x.split('/')[3] for x in namelist
-                          if any(x.endswith('/') and x.startswith(path)
-                                 and x != path for path in MESSAGES_PATHS)}
+    total, senders = {}, source.senders
     if len(senders) == 0:
         logging.error('No messages found.')
         return
     for sender in tqdm(senders):
         counted_by_user, i = {}, 0
-        files = [x for path in MESSAGES_PATHS
-                 for x in namelist
-                 if x.endswith('.json') and x.startswith(path + sender + '/message_')]
-        for file in files:
+        for file in source.files[sender]:
             with source.open(file) as f:
                 df = pd.DataFrame(json.loads(f.read())['messages'])
                 if 'content' in df.columns:
@@ -141,19 +201,13 @@ def count_characters():
         row = str(row['content']).encode('iso-8859-1').decode('utf-8')
         return collections.Counter(row)
 
-    namelist = source.namelist()
-    total, senders = {}, {x.split('/')[3] for x in namelist
-                          if any(x.endswith('/') and x.startswith(path)
-                                 and x != path for path in MESSAGES_PATHS)}
+    total, senders = {}, source.senders
     if len(senders) == 0:
         logging.error('No messages found.')
         return
     for sender in tqdm(senders):
         counted_all, i = collections.Counter(), 0
-        files = [x for path in MESSAGES_PATHS
-                 for x in namelist
-                 if x.endswith('.json') and x.startswith(path + sender + '/message_')]
-        for file in files:
+        for file in source.files[sender]:
             with source.open(file) as f:
                 df = pd.DataFrame(json.loads(f.read())['messages'])
                 if 'content' in df.columns:
@@ -290,6 +344,7 @@ def words_conversation_statistics(data_source, user):
     else:
         print('User not found.')
 
+
 # User statistics
 
 def user_statistics(data_source, user_name):
@@ -323,10 +378,7 @@ def interval_count(inbox_name, function, delta=0.0):
     :return: dictionary of number of messages grouped by timeframe
     """
     messages, i = collections.Counter(), 0
-    files = [x for path in MESSAGES_PATHS
-             for x in source.namelist()
-             if x.endswith('.json') and x.startswith(path + inbox_name + '/message_')]
-    for file in files:
+    for file in source.files[inbox_name]:
         with source.open(file) as f:
             df = pd.DataFrame(json.loads(f.read())['messages'])
             df = pd.to_datetime(df.iloc[:, 1], unit='ms')
@@ -395,9 +447,7 @@ def hours_chats(delta=0.0):
     :return: None
     """
     messages = collections.Counter()
-    for sender in {x.split('/')[3] for x in source.namelist()
-                   if any(x.endswith('/') and x.startswith(path)
-                          and x != path for path in MESSAGES_PATHS)}:
+    for sender in source.senders:
         messages += interval_count(sender, lambda x: x.dt.hour, delta)
     hours_plot(messages, delta)
 
@@ -467,9 +517,7 @@ def daily_chats(delta=0.0):
     :return: None
     """
     messages = collections.Counter()
-    for sender in {x.split('/')[3] for x in source.namelist()
-                   if any(x.endswith('/') and x.startswith(path)
-                            and x != path for path in MESSAGES_PATHS)}:
+    for sender in source.senders:
         messages += interval_count(sender, lambda x: x.dt.date, delta)
     interval_plot(messages)
 
@@ -494,9 +542,7 @@ def monthly_chats():
     :return: None
     """
     messages = collections.Counter()
-    for sender in {x.split('/')[3] for x in source.namelist()
-                   if any(x.endswith('/') and x.startswith(path)
-                          and x != path for path in MESSAGES_PATHS)}:
+    for sender in source.senders:
         messages += interval_count(sender, lambda x: x.dt.to_period("M").astype('datetime64[ns]'))
     interval_plot(messages)
 
@@ -540,9 +586,7 @@ def yearly_chats():
     :return: None
     """
     messages = collections.Counter()
-    for sender in {x.split('/')[3] for x in source.namelist()
-                   if any(x.endswith('/') and x.startswith(path)
-                          and x != path for path in MESSAGES_PATHS)}:
+    for sender in source.senders:
         messages += interval_count(sender, lambda x: x.dt.year)
     messages = pd.DataFrame(messages, index=[0])
     print(messages.iloc[0].describe())
