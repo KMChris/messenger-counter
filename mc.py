@@ -1,4 +1,4 @@
-import MessengerCounter
+from MessengerCounter import MessengerCounter
 import argparse
 
 
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.command == 'count':
-        MessengerCounter.set_source(args.file)
+        MessengerCounter(args.file)
         types = []
         if args.messages or not (args.messages or args.chars or args.words):
             types.append('messages')
