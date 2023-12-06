@@ -18,27 +18,29 @@ class Source:
     the directory from extracted .zip file.
     """
     def __init__(self, path):
+        folders = ['inbox', 'archived_threads',
+                   'filtered_threads', 'message_requests']
+
         # Detecting if path is .zip file or directory
         if path.endswith('.zip'):
             self.zip = ZipFile(path)
-            self.path = 'your_activity_across_facebook/messages'
+            self.path = 'your_activity_across_facebook/messages/'
+            self.paths = [self.path + folder + '/'
+                          for folder in folders]
         elif os.path.isdir(path):
             self.zip = None
             # Find messages folder
             for root, dirs, files in os.walk(path):
                 if 'messages' in dirs:
                     self.path = os.path.join(root, 'messages')
+                    self.paths = [os.path.join(self.path, folder)
+                                  for folder in folders]
                     break
             else:
                 raise FileNotFoundError('Messages not found.')
         else:
             raise FileNotFoundError('Path is not a .zip file or directory.')
 
-        folders = ['inbox', 'archived_threads',
-                   'filtered_threads', 'message_requests']
-        self.paths = [os.path.join(self.path, folder)
-                 for folder in folders]
-        self.namelist = self._get_namelist()
         self.senders = self._get_senders()
         self.files = {sender: self._get_files(sender)
                       for sender in self.senders}
@@ -50,28 +52,15 @@ class Source:
         """
         if self.zip is not None:
             return self.zip.open(file)
-        return open(os.path.join(self.path, file), 'rb')
-
-    def _get_namelist(self):
-        """
-        Returns list of files in folder.
-        """
-        if self.zip is not None:
-            return self.zip.namelist()
-        namelist = []
-        for root, dirs, filenames in os.walk(self.path):
-            for d in dirs:
-                namelist.append(os.path.relpath(os.path.join(root, d), self.path))
-            for file in filenames:
-                namelist.append(os.path.relpath(os.path.join(root, file), self.path))
-        return namelist
+        return open(os.path.join(file), 'rb')
 
     def _get_senders(self):
         """
-        Returns list of conversation ids.
+        Returns set containing ids
+        of all conversations.
         """
         if self.zip is not None:
-            return {x.split('/')[3] for x in self.namelist
+            return {x.split('/')[3] for x in self.zip.namelist()
                     if any(x.endswith('/') and x.startswith(path)
                            and x != path for path in self.paths)}
         return {d for path in self.paths
@@ -79,11 +68,25 @@ class Source:
 
     def _get_files(self, sender):
         """
-        Returns list of files from specific sender.
+        Returns list of paths to .json files
+        containing messages from specific sender.
         """
-        return [x for path in self.paths
-                for x in self.namelist
-                if x.endswith('.json') and x.startswith(os.path.join(path, sender, 'message_'))]
+        if self.zip is not None:
+            return [x for path in self.paths for x in self.zip.namelist()
+                    if x.endswith('.json') and x.startswith(path + sender + '/message_')]
+        # Check in which folder is the sender
+        for path in self.paths:
+            if sender in os.listdir(path):
+                # Return all .json files in the folder
+                files = os.listdir(os.path.join(path, sender))
+                return [os.path.join(path, sender, file)
+                        for file in files
+                        if file.endswith('.json')]
+        raise FileNotFoundError('Sender not found.')
+
+    def close(self):
+        if self.zip is not None:
+            self.zip.close()
 
 
 def set_source(file):
@@ -613,8 +616,9 @@ if __name__=='__main__':
     while True:
         user_input = input('>').split(' ')
         if user_input[0] == 'exit':
+            source.close()
             break
-        if user_input[0] == '' or user_input[0] == 'count':
+        if user_input[0] == 'count':
             count_messages()
         if user_input[0] == 'words':
             count_words() # TODO add in mc.py
