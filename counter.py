@@ -53,10 +53,11 @@ class MessengerCounter:
 
     # Counting messages and characters
 
-    def count_messages(self):
+    def count_messages(self, save=False):
         """
         Counts messages and saves output to messages.json.
 
+        :param save: True to save output to .json file (default False)
         :return: None
         """
         total, senders = {}, self.source.senders
@@ -71,13 +72,16 @@ class MessengerCounter:
                     messages += Counter(df['sender_name'])
             total[sender] = {k.encode('iso-8859-1').decode('utf-8'): v for k, v in messages.items()}
             total[sender]['total'] = sum(messages.values())
-        with open('messages.json', 'w', encoding='utf-8') as output:
-            json.dump(total, output, ensure_ascii=False)
+        if save:
+            with open('messages.json', 'w', encoding='utf-8') as output:
+                json.dump(total, output, ensure_ascii=False)
+        return total
 
-    def count_words(self):
+    def count_words(self, save=False):
         """
         Counts words from messages and saves output to messages_words.json.
 
+        :param save: True to save output to .json file (default False)
         :return: None
         """
         # TODO add counting words for specific conversation due to high processing time
@@ -100,13 +104,16 @@ class MessengerCounter:
                             if v != 0:
                                 counted_by_user[k] = counted_by_user.get(k, Counter()) + v
             total[sender] = counted_by_user
-        with open('messages_words.json', 'w', encoding='utf-8') as output:
-            json.dump(total, output, ensure_ascii=False)
+        if save:
+            with open('messages_words.json', 'w', encoding='utf-8') as output:
+                json.dump(total, output, ensure_ascii=False)
+        return total
 
-    def count_words_threads(self):
+    def count_words_threads(self, save=False):
         """
         Counts words from messages and saves output to messages_words.json.
 
+        :param save: True to save output to .json file (default False)
         :return: None
         """
         total, senders = {}, self.source.senders
@@ -132,13 +139,16 @@ class MessengerCounter:
         with ThreadPoolExecutor(max_workers=self.threads) as executor:
             list(tqdm(executor.map(count_sender, senders), total=len(senders)))
 
-        with open('messages_words.json', 'w', encoding='utf-8') as output:
-            json.dump(total, output, ensure_ascii=False)
+        if save:
+            with open('messages_words.json', 'w', encoding='utf-8') as output:
+                json.dump(total, output, ensure_ascii=False)
+        return total
 
-    def count_characters(self):
+    def count_characters(self, save=False):
         """
         Counts characters from messages and saves output to messages_chars.json.
 
+        :param save: True to save output to .json file (default False)
         :return: None
         """
         def count_row(row):
@@ -158,29 +168,31 @@ class MessengerCounter:
                         df['counted'] = df.apply(count_row, axis=1)
                         counted_all += sum(df['counted'], Counter())
             total[sender] = dict(counted_all)
-        with open('messages_chars.json', 'w', encoding='utf-8') as output:
-            json.dump(total, output, ensure_ascii=False)
 
-    def count(self, types=('messages',)):
+        if save:
+            with open('messages_chars.json', 'w', encoding='utf-8') as output:
+                json.dump(total, output, ensure_ascii=False)
+        return total
+
+    def count(self, data_type='messages', save=False):
         """
-        Counts messages or characters from messages
-        and saves output to the file.
+        Counts messages, characters or words.
 
-        :param types: list of types to count, possible values:
-                      'messages', 'chars', 'words' (default 'messages')
+        :param data_type: type of data to count (default 'messages')
+        :param save: True to save output to .json file (default False)
         :return: None
         """
-        if 'messages' in types:
-            self.count_messages()
-        if 'chars' in types:
-            self.count_characters()
-        if 'words' in types:
-            self.count_words()
+        if data_type == 'messages':
+            return self.count_messages(save)
+        elif data_type == 'chars':
+            return self.count_characters(save)
+        elif data_type == 'words':
+            return self.count_words(save)
 
 
     # Statistics
 
-    def statistics(self, data_source, conversation=None, key='messages'):
+    def statistics(self, data_source, conversation=None, data_type='messages'):
         """
         Prints statistics of given data source.
 
@@ -188,20 +200,20 @@ class MessengerCounter:
                             by the get_data() function
         :param conversation: conversation id or None for overall statistics
                              (default None)
-        :param key:
+        :param data_type:
         :return: None
         """
         if conversation is None:
-            if key=='chars':
+            if data_type== 'chars':
                 self.characters_statistics(data_source)
-            elif key=='words':
+            elif data_type== 'words':
                 self.words_statistics(data_source)
             else:
                 self.messages_statistics(data_source)
         else:
-            if key=='chars':
+            if data_type== 'chars':
                 self.characters_conversation_statistics(data_source, conversation)
-            elif key=='words':
+            elif data_type== 'words':
                 self.words_conversation_statistics(data_source, conversation)
             else:
                 print(conversation)

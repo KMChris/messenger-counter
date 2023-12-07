@@ -84,11 +84,13 @@ python -m mc daily "facebook-YourName.zip" John
 ## Basic module usage
 
 Get started:
+
 ```python
-import MessengerCounter as mc
+import counter as mc
+
 mc.set_source('facebook-YourName.zip') # insert path for your .zip file
 mc.count()
-mc.count(chars=True)
+mc.count('chars', save=True)
 data = mc.get_data()
 mc.statistics(*data)
 ```
