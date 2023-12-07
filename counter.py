@@ -53,7 +53,7 @@ class MessengerCounter:
 
     # Counting messages and characters
 
-    def count_messages(self, save=False):
+    def count_messages(self):
         """
         Counts messages and saves output to messages.json.
 
@@ -72,12 +72,9 @@ class MessengerCounter:
                     messages += Counter(df['sender_name'])
             total[sender] = {k.encode('iso-8859-1').decode('utf-8'): v for k, v in messages.items()}
             total[sender]['total'] = sum(messages.values())
-        if save:
-            with open('messages.json', 'w', encoding='utf-8') as output:
-                json.dump(total, output, ensure_ascii=False)
         return total
 
-    def count_words(self, save=False):
+    def count_words(self):
         """
         Counts words from messages and saves output to messages_words.json.
 
@@ -104,12 +101,9 @@ class MessengerCounter:
                             if v != 0:
                                 counted_by_user[k] = counted_by_user.get(k, Counter()) + v
             total[sender] = counted_by_user
-        if save:
-            with open('messages_words.json', 'w', encoding='utf-8') as output:
-                json.dump(total, output, ensure_ascii=False)
         return total
 
-    def count_words_threads(self, save=False):
+    def count_words_threads(self):
         """
         Counts words from messages and saves output to messages_words.json.
 
@@ -138,10 +132,6 @@ class MessengerCounter:
 
         with ThreadPoolExecutor(max_workers=self.threads) as executor:
             list(tqdm(executor.map(count_sender, senders), total=len(senders)))
-
-        if save:
-            with open('messages_words.json', 'w', encoding='utf-8') as output:
-                json.dump(total, output, ensure_ascii=False)
         return total
 
     def count_characters(self, save=False):
@@ -168,13 +158,9 @@ class MessengerCounter:
                         df['counted'] = df.apply(count_row, axis=1)
                         counted_all += sum(df['counted'], Counter())
             total[sender] = dict(counted_all)
-
-        if save:
-            with open('messages_chars.json', 'w', encoding='utf-8') as output:
-                json.dump(total, output, ensure_ascii=False)
         return total
 
-    def count(self, data_type='messages', save=False):
+    def count(self, data_type='messages'):
         """
         Counts messages, characters or words.
 
@@ -183,11 +169,11 @@ class MessengerCounter:
         :return: None
         """
         if data_type == 'messages':
-            return self.count_messages(save)
+            return self.count_messages()
         elif data_type == 'chars':
-            return self.count_characters(save)
+            return self.count_characters()
         elif data_type == 'words':
-            return self.count_words(save)
+            return self.count_words()
 
 
     # Statistics

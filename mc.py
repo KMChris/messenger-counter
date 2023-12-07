@@ -17,6 +17,7 @@ class Loader:
             'chars': 'messages_chars.json',
             'words': 'messages_words.json'
         }
+        self.save = False
         for data_type in self.data.keys():
             try:
                 self.load(data_type)
@@ -41,6 +42,14 @@ class Loader:
         else:
             logging.error('Conversation not found.')
 
+    def __getitem__(self, item):
+        return self.data[item]
+
+    def __setitem__(self, item, value):
+        if self.save:
+            with open(self.filenames[item], 'w', encoding='utf-8') as file:
+                json.dump(self.data[item], file, indent=4)
+        self.data[item] = value
 
 
 if __name__ == '__main__':
@@ -66,16 +75,16 @@ if __name__ == '__main__':
             counter.close()
             break
         elif user_input[0] == 'count':
-            save = len(user_input) > 2 and 's' in user_input[2]
+            loader.save = len(user_input) > 2 and 's' in user_input[2]
             if len(user_input) > 1:
                 if 'm' in user_input[1]:
-                    loader.messages = counter.count('messages', save)
+                    loader['messages'] = counter.count('messages')
                 if 'c' in user_input[1]:
-                    loader.chars = counter.count('chars', save)
+                    loader['chars'] = counter.count('chars')
                 if 'w' in user_input[1]:
-                    loader.words = counter.count('words', save)
+                    loader['words'] = counter.count('words')
             else:
-                loader.messages = counter.count('messages', save)
+                loader['messages'] = counter.count('messages')
         elif user_input[0] in ('help', '?'):
             print('Messenger Counter available commands:')
             print('  count [mcw] [s] - counts messages, characters and words, where:')
@@ -102,27 +111,27 @@ if __name__ == '__main__':
                 loader.require('chars')
                 key = loader.find(user_input[1], 'chars')
                 if key:
-                    counter.statistics(loader.data['chars'], key, 'chars')
+                    counter.statistics(loader['chars'], key, 'chars')
             if len(user_input) > 3 and user_input[3] == '-w':
                 loader.require('words')
                 key = loader.find(user_input[1], 'words')
                 if key:
-                    counter.words_conversation_statistics(loader.data['words'][key], user_input[2])
+                    counter.words_conversation_statistics(loader['words'][key], user_input[2])
             elif len(user_input) > 1 and not user_input[1] == '-c':
                 loader.require('messages')
                 key = loader.find(user_input[1], 'messages')
                 if key:
-                    counter.statistics(loader.data['messages'], key, 'messages')
+                    counter.statistics(loader['messages'], key, 'messages')
             elif len(user_input) > 1 and user_input[1] == '-c':
                 loader.require('chars')
-                counter.statistics(loader.data['chars'], data_type='chars')
+                counter.statistics(loader['chars'], data_type='chars')
             else:
                 loader.require('messages')
-                counter.statistics(loader.data['messages'], data_type='messages')
+                counter.statistics(loader['messages'], data_type='messages')
         elif user_input[0] == 'user':
             if len(user_input) > 1:
                 loader.require('messages')
-                data = pd.DataFrame(loader.data['messages']).fillna(0).astype('int') # TODO examine this
+                data = pd.DataFrame(loader['messages']).fillna(0).astype('int') # TODO examine this
                 for key in data.index:
                     if key.startswith(' '.join(user_input[1:])):
                         counter.user_statistics(data, key)
