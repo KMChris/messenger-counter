@@ -16,7 +16,8 @@ class Source:
             self.zip = ZipFile(path)
             self.path = 'your_activity_across_facebook/messages/'
             self.paths = [self.path + folder + '/'
-                          for folder in folders]
+                          for folder in folders
+                          if folder in self.zip.namelist()]
         elif os.path.isdir(path):
             self.zip = None
             # Find messages folder
@@ -24,7 +25,8 @@ class Source:
                 if 'messages' in dirs:
                     self.path = os.path.join(root, 'messages')
                     self.paths = [os.path.join(self.path, folder)
-                                  for folder in folders]
+                                  for folder in folders
+                                  if folder in os.listdir(self.path)]
                     break
             else:
                 raise FileNotFoundError('Messages not found.')

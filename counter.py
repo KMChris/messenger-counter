@@ -2,8 +2,10 @@ from concurrent.futures import ThreadPoolExecutor
 from matplotlib import pyplot as plt
 from collections import Counter
 from source import Source
+from queue import Queue
 from tqdm import tqdm
 import pandas as pd
+import threading
 import logging
 import json
 import math
@@ -56,9 +58,6 @@ class MessengerCounter:
     def count_messages(self):
         """
         Counts messages and saves output to messages.json.
-
-        :param save: True to save output to .json file (default False)
-        :return: None
         """
         total, senders = {}, self.source.senders
         if len(senders) == 0:
@@ -77,9 +76,6 @@ class MessengerCounter:
     def count_words(self):
         """
         Counts words from messages and saves output to messages_words.json.
-
-        :param save: True to save output to .json file (default False)
-        :return: None
         """
         # TODO add counting words for specific conversation due to high processing time
         total, senders = {}, self.source.senders
@@ -106,17 +102,25 @@ class MessengerCounter:
     def count_words_threads(self):
         """
         Counts words from messages and saves output to messages_words.json.
-
-        :param save: True to save output to .json file (default False)
-        :return: None
         """
-        total, senders = {}, self.source.senders
+        senders = self.source.senders
+        total = {}#{sender: Counter() for sender in senders}
         if len(senders) == 0:
             logging.error('No messages found.')
             return
-        def count_sender(sender):
-            counted_by_user, i = {}, 0
-            for file in self.source.files[sender]:
+
+        lock = threading.Lock()
+        queue = Queue()
+        for sender in senders:
+            for filename in self.source.files[sender]:
+                queue.put((sender, filename))
+        progress = tqdm(total=queue.qsize(), desc='Counting words', unit='files')
+
+        def count_files():
+            # total_thread = {}
+            while not queue.empty():
+                sender, file = queue.get()
+                counted = {}
                 with self.source.open(file) as f:
                     df = pd.DataFrame(json.loads(f.read())['messages'])
                     if 'content' in df.columns:
@@ -124,22 +128,30 @@ class MessengerCounter:
                             .str.decode('utf-8').str.lower().str.split().apply(
                             lambda x: Counter([y.strip('.,?!:;()[]{}"\'') for y in x])
                         )
+                        df['sender_name'] = df['sender_name'].str.encode('iso-8859-1').str.decode('utf-8')
                         df = df.groupby('sender_name')['counted'].sum()
                         for k, v in df.to_dict().items():
                             if v != 0:
-                                counted_by_user[k] = counted_by_user.get(k, Counter()) + v
-            total[sender] = counted_by_user
+                                counted[k] = counted.get(k, Counter()) + v
+                with lock:
+                    if sender in total:
+                        total[sender] = {k: total[sender].get(k, Counter()) + counted.get(k, Counter())
+                                         for k in set(total[sender]) | set(counted)}
+                    else:
+                        total[sender] = counted
+                queue.task_done()
+                progress.update()
 
         with ThreadPoolExecutor(max_workers=self.threads) as executor:
-            list(tqdm(executor.map(count_sender, senders), total=len(senders)))
+            for _ in range(self.threads):
+                executor.submit(count_files)
+            queue.join()
+        progress.close()
         return total
 
-    def count_characters(self, save=False):
+    def count_characters(self):
         """
         Counts characters from messages and saves output to messages_chars.json.
-
-        :param save: True to save output to .json file (default False)
-        :return: None
         """
         def count_row(row):
             row = str(row['content']).encode('iso-8859-1').decode('utf-8')
@@ -165,7 +177,6 @@ class MessengerCounter:
         Counts messages, characters or words.
 
         :param data_type: type of data to count (default 'messages')
-        :param save: True to save output to .json file (default False)
         :return: None
         """
         if data_type == 'messages':
@@ -173,7 +184,7 @@ class MessengerCounter:
         elif data_type == 'chars':
             return self.count_characters()
         elif data_type == 'words':
-            return self.count_words()
+            return self.count_words_threads()
 
 
     # Statistics
