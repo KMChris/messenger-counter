@@ -91,20 +91,20 @@ class MessengerCounter:
             counted = {}
             while not queue.empty():
                 sender = queue.get()
+                counted[sender] = {}
                 for file in self.source.files[sender]:
                     with self.source.open(file) as f:
                         df = pd.DataFrame(json.loads(f.read())['messages'])
                         if 'content' in df.columns:
                             df = df[['sender_name', 'content']]
                             df['sender_name'] = df['sender_name'].str.encode('iso-8859-1').str.decode('utf-8')
-                            df['counted'] = df['content'].dropna().str.encode('iso-8859-1') \
+                            def inner(word):
+                                counted[sender][word] = counted[sender].get(word, 0) + 1
+                                return word
+                            df['content'].dropna().str.encode('iso-8859-1') \
                                 .str.decode('utf-8').str.lower().str.split().apply(
-                                lambda x: Counter([y.strip('.,?!:;()[]{}"\'') for y in x])
+                                lambda x: [inner(y.strip('.,?!:;()[]{}"\'')) for y in x]
                             )
-                            df = df.groupby('sender_name')['counted'].sum()
-                            for k, v in df.to_dict().items():
-                                if v != 0:
-                                    counted[k] = counted.get(k, Counter()) + v
                 queue.task_done()
                 progress.update()
             return counted
