@@ -77,34 +77,7 @@ class MessengerCounter:
         """
         Counts words from messages and saves output to messages_words.json.
         """
-        # TODO add counting words for specific conversation due to high processing time
-        total, senders = {}, self.source.senders
-        if len(senders) == 0:
-            logging.error('No messages found.')
-            return
-        for sender in tqdm(senders):
-            counted_by_user, i = {}, 0
-            for file in self.source.files[sender]:
-                with self.source.open(file) as f:
-                    df = pd.DataFrame(json.loads(f.read())['messages'])
-                    if 'content' in df.columns:
-                        df['counted'] = df['content'].dropna().str.encode('iso-8859-1')\
-                            .str.decode('utf-8').str.lower().str.split().apply(
-                            lambda x: Counter([y.strip('.,?!:;()[]{}"\'') for y in x])
-                        )
-                        df = df.groupby('sender_name')['counted'].sum()
-                        for k, v in df.to_dict().items():
-                            if v != 0:
-                                counted_by_user[k] = counted_by_user.get(k, Counter()) + v
-            total[sender] = counted_by_user
-        return total
-
-    def count_words_threads(self):
-        """
-        Counts words from messages and saves output to messages_words.json.
-        """
         senders = self.source.senders
-        total = {}#{sender: Counter() for sender in senders}
         if len(senders) == 0:
             logging.error('No messages found.')
             return
@@ -122,11 +95,12 @@ class MessengerCounter:
                     with self.source.open(file) as f:
                         df = pd.DataFrame(json.loads(f.read())['messages'])
                         if 'content' in df.columns:
+                            df = df[['sender_name', 'content']]
+                            df['sender_name'] = df['sender_name'].str.encode('iso-8859-1').str.decode('utf-8')
                             df['counted'] = df['content'].dropna().str.encode('iso-8859-1') \
                                 .str.decode('utf-8').str.lower().str.split().apply(
                                 lambda x: Counter([y.strip('.,?!:;()[]{}"\'') for y in x])
                             )
-                            df['sender_name'] = df['sender_name'].str.encode('iso-8859-1').str.decode('utf-8')
                             df = df.groupby('sender_name')['counted'].sum()
                             for k, v in df.to_dict().items():
                                 if v != 0:
@@ -138,7 +112,6 @@ class MessengerCounter:
         with ThreadPoolExecutor(max_workers=self.threads) as executor:
             futures = [executor.submit(count_sender)
                        for _ in range(self.threads)]
-            # total = {k: v for f in as_completed(futures) for k, v in f.result().items()}
             total = reduce(lambda x, y: x | y, map(lambda x: x.result(), as_completed(futures)))
             queue.join()
         progress.close()
@@ -179,7 +152,7 @@ class MessengerCounter:
         elif data_type == 'chars':
             return self.count_characters()
         elif data_type == 'words':
-            return self.count_words_threads()
+            return self.count_words()
 
 
     # Statistics
