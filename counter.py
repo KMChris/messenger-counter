@@ -1,11 +1,11 @@
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from matplotlib import pyplot as plt
 from collections import Counter
+from functools import reduce
 from source import Source
 from queue import Queue
 from tqdm import tqdm
 import pandas as pd
-import threading
 import logging
 import json
 import math
@@ -109,42 +109,37 @@ class MessengerCounter:
             logging.error('No messages found.')
             return
 
-        lock = threading.Lock()
         queue = Queue()
         for sender in senders:
-            for filename in self.source.files[sender]:
-                queue.put((sender, filename))
-        progress = tqdm(total=queue.qsize(), desc='Counting words', unit='files')
+                queue.put(sender)
+        progress = tqdm(total=queue.qsize(), desc='Counting words', unit='conv.')
 
-        def count_files():
-            # total_thread = {}
+        def count_sender():
+            counted = {}
             while not queue.empty():
-                sender, file = queue.get()
-                counted = {}
-                with self.source.open(file) as f:
-                    df = pd.DataFrame(json.loads(f.read())['messages'])
-                    if 'content' in df.columns:
-                        df['counted'] = df['content'].dropna().str.encode('iso-8859-1') \
-                            .str.decode('utf-8').str.lower().str.split().apply(
-                            lambda x: Counter([y.strip('.,?!:;()[]{}"\'') for y in x])
-                        )
-                        df['sender_name'] = df['sender_name'].str.encode('iso-8859-1').str.decode('utf-8')
-                        df = df.groupby('sender_name')['counted'].sum()
-                        for k, v in df.to_dict().items():
-                            if v != 0:
-                                counted[k] = counted.get(k, Counter()) + v
-                with lock:
-                    if sender in total:
-                        total[sender] = {k: total[sender].get(k, Counter()) + counted.get(k, Counter())
-                                         for k in set(total[sender]) | set(counted)}
-                    else:
-                        total[sender] = counted
+                sender = queue.get()
+                for file in self.source.files[sender]:
+                    with self.source.open(file) as f:
+                        df = pd.DataFrame(json.loads(f.read())['messages'])
+                        if 'content' in df.columns:
+                            df['counted'] = df['content'].dropna().str.encode('iso-8859-1') \
+                                .str.decode('utf-8').str.lower().str.split().apply(
+                                lambda x: Counter([y.strip('.,?!:;()[]{}"\'') for y in x])
+                            )
+                            df['sender_name'] = df['sender_name'].str.encode('iso-8859-1').str.decode('utf-8')
+                            df = df.groupby('sender_name')['counted'].sum()
+                            for k, v in df.to_dict().items():
+                                if v != 0:
+                                    counted[k] = counted.get(k, Counter()) + v
                 queue.task_done()
                 progress.update()
+            return counted
 
         with ThreadPoolExecutor(max_workers=self.threads) as executor:
-            for _ in range(self.threads):
-                executor.submit(count_files)
+            futures = [executor.submit(count_sender)
+                       for _ in range(self.threads)]
+            # total = {k: v for f in as_completed(futures) for k, v in f.result().items()}
+            total = reduce(lambda x, y: x | y, map(lambda x: x.result(), as_completed(futures)))
             queue.join()
         progress.close()
         return total
