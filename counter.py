@@ -96,15 +96,16 @@ class MessengerCounter:
                     with self.source.open(file) as f:
                         df = pd.DataFrame(json.loads(f.read())['messages'])
                         if 'content' in df.columns:
-                            df = df[['sender_name', 'content']]
+                            df = df[['sender_name', 'content']].dropna()
                             df['sender_name'] = df['sender_name'].str.encode('iso-8859-1').str.decode('utf-8')
-                            def inner(word):
-                                counted[sender][word] = counted[sender].get(word, 0) + 1
-                                return word
-                            df['content'].dropna().str.encode('iso-8859-1') \
-                                .str.decode('utf-8').str.lower().str.split().apply(
-                                lambda x: [inner(y.strip('.,?!:;()[]{}"\'')) for y in x]
-                            )
+                            df['content'] = df['content'].str.encode('iso-8859-1') \
+                                .str.decode('utf-8').str.lower().str.split()
+                            for name, words in zip(df['sender_name'], df['content']):
+                                if name not in counted[sender]:
+                                    counted[sender][name] = {}
+                                for word in words:
+                                    word = word.strip('.,?!:;()[]{}"\'')
+                                    counted[sender][name][word] = counted[sender][name].get(word, 0) + 1
                 queue.task_done()
                 progress.update()
             return counted
@@ -112,7 +113,8 @@ class MessengerCounter:
         with ThreadPoolExecutor(max_workers=self.threads) as executor:
             futures = [executor.submit(count_sender)
                        for _ in range(self.threads)]
-            total = reduce(lambda x, y: x | y, map(lambda x: x.result(), as_completed(futures)))
+            total = {sender: result for future in as_completed(futures)
+                     for sender, result in future.result().items()}
             queue.join()
         progress.close()
         return total
