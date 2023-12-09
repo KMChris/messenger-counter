@@ -46,7 +46,7 @@ class Loader:
         # TODO search by actual name
         for key in self.data[where].keys():
             if key.startswith(name):
-                return self.data[where][key]
+                return key
         else:
             logging.error('Conversation not found.')
 
@@ -100,7 +100,7 @@ if __name__ == '__main__':
         elif user_input[0] in ('help', '?'):
             print('Messenger Counter available commands:')
             print('  count [mcw] [s] - counts messages, characters and words, where:')
-            print('         m - messages')
+            print('         m - messages (default)')
             print('         c - characters')
             print('         w - words')
             print('         s - save to .json file')

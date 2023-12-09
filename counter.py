@@ -1,7 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from collections import Counter, defaultdict
 from matplotlib import pyplot as plt
-from collections import Counter
-from functools import reduce
 from source import Source
 from queue import Queue
 from tqdm import tqdm
@@ -14,7 +13,7 @@ import math
 class MessengerCounter:
     def __init__(self, file):
         self.source = Source(file)
-        self.threads = 8
+        self.threads = 1
 
     def get_data(self, conversation=None, chars=False, user=False):
         """
@@ -102,10 +101,10 @@ class MessengerCounter:
                                 .str.decode('utf-8').str.lower().str.split()
                             for name, words in zip(df['sender_name'], df['content']):
                                 if name not in counted[sender]:
-                                    counted[sender][name] = {}
+                                    counted[sender][name] = defaultdict(int)
                                 for word in words:
                                     word = word.strip('.,?!:;()[]{}"\'')
-                                    counted[sender][name][word] = counted[sender][name].get(word, 0) + 1
+                                    counted[sender][name][word] += 1
                 queue.task_done()
                 progress.update()
             return counted
