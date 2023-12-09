@@ -19,78 +19,69 @@ pip install messenger-counter
 
 ## CLI usage
 
-1. Count your messages using (insert path for your .zip file)
+1. Run the following command to open CLI. You can provide path to .zip file (or extracted folder) as an argument.
 ```shell
-python -m mc count "facebook-YourName.zip"
+python -m mc facebook-YourName.zip
 ```
-2. Add flag `--chars` or `-c` to count characters (optional)
+2. Wait for `>` to appear and use following commands for different statistics (examples below)
 ```shell
-python -m mc count -c "facebook-YourName.zip"
-```
-3. Use following commands for different statistics (examples below)
-```shell
-python -m mc [-h] command [options]
+>command [options]
 ```
 Available commands:
-* `count [-c] file` &mdash; Counts all messages/characters and saves
-  to _messages.json_ or _messages_chars.json_ file.
-* `stats [-c] [converstion]` &mdash; Displays statistics for counted messages.
+* `count [mcw] [s]` &mdash; Counts messages, characters and words. 
+  You can use `s` to save data to .json file.
+* `stats [converstion] [-c]` &mdash; Displays statistics for counted messages.
   You can specify conversation for detailed statistics
   and use -c for character statistics.
-* `user name` &mdash; Detailed statistics for specific person
-* `yearly file [conversation]` &mdash; Number of messages per year.
-  (please specify path to .zip file as for counting messages)
+* `user [name]` &mdash; Detailed statistics for specific person
+* `yearly [conversation]` &mdash; Number of messages per year.
   You can specify conversation for more precise statistics. 
-* `daily [-d DIFF] file [conversation]` &mdash; Number of messages daily.
-  (use `-d` or `--difference` flag to time shift by some number
-  of hours and show statistics differently)
-* `hours [-d DIFF] file [conversation]` &mdash; Average number of messages
-  by hour throughout the day. (additional options as above)
+* `daily [conversation]` &mdash; Number of messages daily.
+* `hours [conversation]` &mdash; Average number of messages
+  by hour throughout the day.
 
 ## Examples
 
 Show general statistics of all conversations
 ```shell
-python -m mc stats
+stats
 ```
 
 Show messages statistics for specific conversation.
 (you can list all conversations by running previous example) 
 ```shell
-python -m mc stats JohnDoe
+stats JohnDoe
 ```
 
 Program allows you to write only the beginning of the conversation name.
 It will return first matching occurrence. (Works exactly as the previous example)
 ```shell
-python -m mc stats Joh
+stats Joh
 ```
 
 Shows how many messages did the person send grouped by conversation.
 ```shell
-python -m mc user "John Doe"
+user "John Doe"
 ```
 
 Shows how many messages on average have you send and received grouped by time of the day.
 ```shell
-python -m mc daily "facebook-YourName.zip"
+daily
 ```
 
 Similar to previous one, but limited to one conversation.
 ```shell
-python -m mc daily "facebook-YourName.zip" John
+daily John
 ```
 
 ## Basic module usage
 
 Get started:
+
 ```python
-import MessengerCounter as mc
-mc.set_source('facebook-YourName.zip') # insert path for your .zip file
-mc.count()
-mc.count(chars=True)
-data = mc.get_data()
-mc.statistics(*data)
+import counter as mc
+
+# Available soon
 ```
 
 ## How to download messages
