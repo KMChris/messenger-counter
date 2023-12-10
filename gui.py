@@ -38,8 +38,7 @@ class GUI:
 
     def set_source(self):
         try:
-            self.counter = MessengerCounter(self.file)
-            self.counter.count()
+            self.counter = MessengerCounter(self.file, gui=True)
             return True
         except FileNotFoundError:
             return False

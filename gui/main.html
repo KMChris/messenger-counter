@@ -5,7 +5,8 @@
     <title>Messenger Counter</title>
     <link rel="icon" href="favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.orange-indigo.min.css"/>
     <style>
         body {
             background-color: #111111;
@@ -29,28 +30,12 @@
             box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
         }
 
-        button {
-            background-color: #3498db;
-            color: #fff;
-            padding: 10px 20px;
-            border-radius: 5px;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s ease;
-        }
-
-        button:hover {
-            background-color: #2980b9;
-        }
-
         /* File select */
         #file-label {
             display: inline-block;
             margin: 0 20px;
             color: #ccc;
         }
-
         .file-select {
             display: flex;
             align-items: center;
@@ -59,16 +44,24 @@
             background-color: #383838;
             border: 1px solid #ccc;
             border-radius: 5px;
+            overflow: hidden;
         }
-
         .file-select:hover {
             border-color: #fff;
         }
+        #file-input {
+            box-shadow: none;
+            border-radius: 0;
+        }
 
-        /* Plots view */
-        #plot-container {
-            width: 100%;
-            height: 100%;
+        /* Loading spinner */
+        #loading-spinner {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            margin: auto;
         }
     </style>
 </head>
@@ -78,15 +71,18 @@
     <h1 id="title">Messenger Counter</h1>
     <div class="file-select">
         <div id="file-label">No file chosen</div>
-        <button id="file-input" onclick="select()">Choose a file</button>
+        <button id="file-input" class="mdl-button mdl-js-button mdl-button--raised
+         mdl-js-ripple-effect mdl-button--primary" onclick="select()">Select file</button>
     </div>
-    <button onclick="submit()">Submit</button>
-</div>
-<div id="progress" style="position: absolute; top: 0; left: 0; width: 100vw; height:100vh; display: none; background-color: rgba(255, 255, 255, 0.3); z-index: 999;">
-    <div id="progress-bar"></div>
-</div>
-<div id="plots" style="display: none;">
-    <div id="plot-container"></div>
+
+    <button id="submitBtn" class="mdl-button mdl-js-button mdl-button--raised
+     mdl-js-ripple-effect mdl-button--primary" onclick="submit()">
+        <div id="loading-spinner" style="display: none;"
+             class="mdl-spinner mdl-spinner--single-color mdl-js-spinner is-active"></div>
+        Submit
+    </button>
+
+
 </div>
 
 <script type="text/javascript" src="/eel.js"></script>
@@ -98,24 +94,19 @@
     }
 
     async function submit() {
+        document.getElementById('submitBtn').setAttribute('disabled', 'disabled');
+        document.getElementById('loading-spinner').style.display = 'block';
         let result = await eel.set_source()();
+        document.getElementById('loading-spinner').style.display = 'none';
+        document.getElementById('submitBtn').removeAttribute('disabled');
         if (result) {
-            document.getElementById('file-select').style.display = 'none';
-            document.getElementById('progress').style.display = 'block';
-            document.getElementById('plots').style.display = 'block';
-            await eel.count('messages')();
-            document.getElementById('progress').style.display = 'none';
-            await plot();
+            window.location.href = '/count.html';
         } else {
             alert('Please select a file');
         }
     }
-
-    async function plot() {
-        let plot = await eel.get_plot()();
-        document.getElementById('plot-container').innerHTML = plot[0];
-        eval(plot[1]);
-    }
 </script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
 </body>
 </html>

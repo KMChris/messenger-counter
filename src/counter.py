@@ -9,12 +9,14 @@ import pandas as pd
 import logging
 import json
 import math
+import eel
 
 
 class MessengerCounter:
-    def __init__(self, file):
+    def __init__(self, file, gui=False, threads=1):
         self.source = Source(file)
-        self.threads = 1
+        self.threads = threads
+        self.gui = gui
 
     # Counting messages and characters
 
@@ -26,14 +28,16 @@ class MessengerCounter:
         if len(senders) == 0:
             logging.error('No messages found.')
             return
-        for sender in tqdm(senders):
-            messages, i = Counter(), 0
+        for i, sender in enumerate(tqdm(senders)):
+            messages = Counter()
             for file in self.source.files[sender]:
                 with self.source.open(file) as f:
                     df = pd.DataFrame(json.loads(f.read())['messages'])
                     messages += Counter(df['sender_name'])
             total[sender] = {k.encode('iso-8859-1').decode('utf-8'): v for k, v in messages.items()}
             total[sender]['total'] = sum(messages.values())
+            if self.gui:
+                eel.progress(int(100 * (i+1) / len(senders)))
         return total
 
     def count_words(self):
@@ -285,7 +289,8 @@ class MessengerCounter:
         print(messages.describe())
         fig = px.bar(x=messages.index, y=messages.values,
                      title='Messages per day',
-                     labels={'x': 'Date', 'y': 'Messages'})
+                     labels={'x': 'Date', 'y': 'Messages'},
+                     color_discrete_sequence=['#ffab40'])
         fig.update_yaxes(fixedrange=True)
         # fig.update_xaxes(rangeselector={
         #     'buttons': [
