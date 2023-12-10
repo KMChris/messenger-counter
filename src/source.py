@@ -17,7 +17,7 @@ class Source:
             self.path = 'your_activity_across_facebook/messages/'
             self.paths = [self.path + folder + '/'
                           for folder in folders
-                          if folder in self.zip.namelist()]
+                          if self.path + folder + '/' in self.zip.namelist()]
         elif os.path.isdir(path):
             self.zip = None
             # Find messages folder

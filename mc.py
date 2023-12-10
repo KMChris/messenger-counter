@@ -1,4 +1,4 @@
-from counter import MessengerCounter
+from src.counter import MessengerCounter
 import pandas as pd
 import argparse
 import logging

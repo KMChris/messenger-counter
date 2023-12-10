@@ -1,9 +1,10 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from collections import Counter, defaultdict
 from matplotlib import pyplot as plt
-from source import Source
+from .source import Source
 from queue import Queue
 from tqdm import tqdm
+import plotly.express as px
 import pandas as pd
 import logging
 import json
@@ -15,48 +16,11 @@ class MessengerCounter:
         self.source = Source(file)
         self.threads = 1
 
-    def get_data(self, conversation=None, chars=False, user=False):
-        """
-        Reads data from messages.json or messages_chars.json
-        and finds key based on the beginning of the string.
-
-        :param conversation: beginning of the conversation id
-                             or None for overall statistics (default None)
-        :param chars: True for counting chars in messages_chars.json,
-                      False for counting messages in messages.json (default False)
-        :param user: True for user name instead of conversation id,
-                     False otherwise (default False)
-        :return: dictionary containing the data and if applicable
-                 a key pointing to a specific conversation, otherwise None
-        """
-        try:
-            data = json.loads(open('messages_chars.json' if chars else 'messages.json', 'r', encoding='utf-8').read())
-            if user:
-                data = pd.DataFrame(data).fillna(0).astype('int')
-                for key in data.index:
-                    if key.lower().startswith(conversation.lower()):
-                        return data, key
-                else:
-                    logging.error('Conversation not found.')
-                    return None, None
-            if conversation is not None:
-                for key in data.keys():
-                    if key.lower().startswith(conversation.lower()):
-                        return data, key
-                else:
-                    logging.error('Conversation not found.')
-                    return None, None
-            else:
-                return data, None
-        except FileNotFoundError:
-            logging.error('Characters not counted.' if chars else 'Messages not counted.')
-
-
     # Counting messages and characters
 
     def count_messages(self):
         """
-        Counts messages and saves output to messages.json.
+        Counts messages and returns dictionary.
         """
         total, senders = {}, self.source.senders
         if len(senders) == 0:
@@ -74,7 +38,7 @@ class MessengerCounter:
 
     def count_words(self):
         """
-        Counts words from messages and saves output to messages_words.json.
+        Counts words from messages and returns dictionary.
         """
         senders = self.source.senders
         if len(senders) == 0:
@@ -120,7 +84,7 @@ class MessengerCounter:
 
     def count_characters(self):
         """
-        Counts characters from messages and saves output to messages_chars.json.
+        Counts characters from messages and returns dictionary.
         """
         def count_row(row):
             row = str(row['content']).encode('iso-8859-1').decode('utf-8')
@@ -319,8 +283,27 @@ class MessengerCounter:
         """
         messages = pd.Series(messages).sort_index()
         print(messages.describe())
-        plt.bar(messages.index, messages)
-        plt.show()
+        fig = px.bar(x=messages.index, y=messages.values,
+                     title='Messages per day',
+                     labels={'x': 'Date', 'y': 'Messages'})
+        fig.update_yaxes(fixedrange=True)
+        # fig.update_xaxes(rangeselector={
+        #     'buttons': [
+        #         dict(count=1, label='1m', step='month', stepmode='backward'),
+        #         dict(count=6, label='6m', step='month', stepmode='backward'),
+        #         dict(count=1, label='YTD', step='year', stepmode='todate'),
+        #         dict(count=1, label='1y', step='year', stepmode='backward'),
+        #         dict(step='all')
+        #     ]
+        # })
+        fig.update_layout(dragmode='zoom', hovermode='x', bargap=0)
+        # fig.show(config={
+        #     'displayModeBar': False,
+        #     'scrollZoom': True
+        # })
+        return fig
+        # plt.bar(messages.index, messages)
+        # plt.show()
 
 
     # Hours
@@ -427,7 +410,7 @@ class MessengerCounter:
                       and show statistics differently (default 0.0)
         :return: None
         """
-        self.interval_plot(self.interval_count(conversation, lambda x: x.dt.date, delta))
+        return self.interval_plot(self.interval_count(conversation, lambda x: x.dt.date, delta))
 
     def daily_chats(self, delta=0.0):
         """
