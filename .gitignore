@@ -144,3 +144,6 @@ messages_chars.json
 
 # IDE
 .idea/
+
+# Node.js
+node_modules/

@@ -63,7 +63,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('file', nargs='?',
                         help='Path to .zip file downloaded from Facebook')
+    parser.add_argument('-g', '--gui', action='store_true',
+                        help='Start GUI')
     args = parser.parse_args()
+    if args.gui:
+        import gui
+        exit()
     if args.file is not None:
         counter = MessengerCounter(args.file)
     else:
