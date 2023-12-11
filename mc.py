@@ -1,4 +1,5 @@
 from src.counter import MessengerCounter
+from src.stats import *
 import pandas as pd
 import argparse
 import logging
@@ -129,23 +130,23 @@ if __name__ == '__main__':
                 if loader.require('chars'):
                     key = loader.find(user_input[1], 'chars')
                     if key:
-                        counter.statistics(loader['chars'], key, 'chars')
+                        statistics(loader['chars'], key, 'chars')
             if len(user_input) > 3 and user_input[3] == '-w':
                 if loader.require('words'):
                     key = loader.find(user_input[1], 'words')
                     if key:
-                        counter.words_conversation_statistics(key, user_input[2])
+                        words_conversation_statistics(key, user_input[2])
             elif len(user_input) > 1 and not user_input[1] == '-c':
                 if loader.require('messages'):
                     key = loader.find(user_input[1], 'messages')
                     if key:
-                        counter.statistics(loader['messages'], key, 'messages')
+                        statistics(loader['messages'], key, 'messages')
             elif len(user_input) > 1 and user_input[1] == '-c':
                 if loader.require('chars'):
-                    counter.statistics(loader['chars'], data_type='chars')
+                    statistics(loader['chars'], data_type='chars')
             else:
                 if loader.require('messages'):
-                    counter.statistics(loader['messages'], data_type='messages')
+                    statistics(loader['messages'], data_type='messages')
         elif user_input[0] == 'user':
             if len(user_input) > 1:
                 if loader.require('messages'):

@@ -5,26 +5,48 @@
     <title>Messenger Counter</title>
     <link rel="icon" href="favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="material.orange-indigo.min.css"/>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="menu">
-    <h1>Messenger Counter</h1>
-</div>
-<div id="plots">
-    <div id="plot-container"></div>
+<div class="mdl-layout mdl-js-layout mdl-layout--fixed-drawer">
+    <div class="mdl-layout__drawer">
+        <span class="mdl-layout-title">Messenger Counter</span>
+        <nav class="mdl-navigation">
+            <a class="mdl-navigation__link" onclick="nav('stats')">Stats</a>
+            <a class="mdl-navigation__link" onclick="nav('words')">Words</a>
+            <a class="mdl-navigation__link" onclick="nav('user')">User</a>
+            <a class="mdl-navigation__link" onclick="nav('daily')">Daily</a>
+            <a class="mdl-navigation__link" onclick="nav('hours')">Hours</a>
+        </nav>
+    </div>
+    <main class="mdl-layout__content">
+        <div class="page-content">
+            <div id="plots">
+                <div id="plot-container"></div>
+            </div>
+        </div>
+    </main>
 </div>
 
 <script>
+    let page = 'stats';
+    function nav(link) {
+        page = link;
+        plot();
+    }
+
     async function plot() {
         // TODO add placeholder for plot
-        let plot = await pywebview.api.get_plot();
+        let [data, plot] = await pywebview.api.get_plot(page);
+        console.log(data);
         document.getElementById('plot-container').innerHTML = plot[0];
         eval(plot[1]);
     }
     window.addEventListener('pywebviewready', plot);
 </script>
 <script src="plotly-latest.min.js"></script>
+<script defer src="material.min.js"></script>
 </body>
 </html>

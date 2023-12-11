@@ -1,16 +1,24 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from collections import Counter, defaultdict
 from matplotlib import pyplot as plt
+import plotly.express as px
 from .source import Source
 from queue import Queue
 from tqdm import tqdm
-import plotly.express as px
 import pandas as pd
 import logging
 import json
 import math
-import eel
 
+
+def mojibake(text):
+    """
+    Fixes mojibake in text.
+
+    :param text: text to fix
+    :return: fixed text
+    """
+    return text.encode('iso-8859-1').decode('utf-8')
 
 class MessengerCounter:
     def __init__(self, file, gui=False, threads=1):
@@ -32,11 +40,19 @@ class MessengerCounter:
             messages = Counter()
             for file in self.source.files[sender]:
                 with self.source.open(file) as f:
-                    df = pd.DataFrame(json.loads(f.read())['messages'])
+                    f = json.loads(f.read())
+                    df = pd.DataFrame(f['messages'])
                     messages += Counter(df['sender_name'])
-            total[sender] = {k.encode('iso-8859-1').decode('utf-8'): v
-                             for k, v in messages.items()}
-            total[sender]['total'] = sum(messages.values())
+            with self.source.open(self.source.files[sender][0]) as f:
+                f = json.loads(f.read()) # TODO optimize, don't load file twice
+                total[sender] = {mojibake(k): v
+                                 for k, v in messages.items()}
+                total[sender]['total'] = sum(messages.values())
+                total[sender]['id'] = mojibake(f['title'])
+                total[sender]['path'] = f['thread_path']
+                # total[sender]['participants'] = {mojibake(x['name']) for x in f['participants']}
+                if 'image' in f:
+                    total[sender]['image'] = f['image']['uri']
             if self.gui:
                 update_progress(int(100 * (i+1) / len(senders)))
         return total
@@ -124,117 +140,6 @@ class MessengerCounter:
             return self.count_characters()
         elif data_type == 'words':
             return self.count_words()
-
-
-    # Statistics
-
-    def statistics(self, data_source, conversation=None, data_type='messages'):
-        """
-        Prints statistics of given data source.
-
-        :param data_source: dictionary containing prepared data generated
-                            by the get_data() function
-        :param conversation: conversation id or None for overall statistics
-                             (default None)
-        :param data_type:
-        :return: None
-        """
-        if conversation is None:
-            if data_type== 'chars':
-                self.characters_statistics(data_source)
-            elif data_type== 'words':
-                self.words_statistics(data_source)
-            else:
-                self.messages_statistics(data_source)
-        else:
-            if data_type== 'chars':
-                self.characters_conversation_statistics(data_source, conversation)
-            elif data_type== 'words':
-                self.words_conversation_statistics(data_source, conversation)
-            else:
-                print(conversation)
-                self.conversation_statistics(data_source, conversation)
-
-    def messages_statistics(self, data_source):
-        """
-        Prints messages overall statistics of given data source.
-
-        :param data_source: dictionary containing prepared data generated
-                            by the get_data() function
-        :return: None
-        """
-        data_source = pd.DataFrame(data_source).fillna(0).astype('int')
-        pd.set_option('display.max_rows', None)
-        total_values = data_source.loc['total'].sort_values(ascending=False)
-        print(total_values)
-        print(total_values.describe())
-        total_values = total_values.sort_values()
-        plt.rcdefaults()
-        plt.barh(total_values.index.astype(str).str[:10][-20:], total_values.iloc[-20:])
-        plt.show()
-
-    def conversation_statistics(self, data_source, conversation):
-        """
-        Prints messages statistics for specific conversation of given data source.
-
-        :param data_source: dictionary containing prepared data generated
-                            by the get_data() function
-        :param conversation: conversation id, or key from get_data() function
-        :return: None
-        """
-        data_source = pd.DataFrame(data_source)
-        data_source = data_source.loc[:, conversation]
-        data_source = data_source[data_source > 0].sort_values(ascending=False).astype('int')
-        pd.set_option('display.max_rows', None)
-        print(data_source)
-
-    def characters_statistics(self, data_source):
-        """
-        Prints characters statistics of given data source.
-
-        :param data_source: dictionary containing prepared data generated
-                            by the get_data() function
-        :return: None
-        """
-        data_source = pd.DataFrame(data_source)
-        data_source['total'] = data_source.sum(axis=1)
-        data_source = data_source.iloc[:, -1]
-        data_source = data_source.sort_values(ascending=False).astype('int')
-        pd.set_option('display.max_rows', None)
-        print(data_source)
-        print(f'Total characters: {data_source.sum()}')
-
-    def characters_conversation_statistics(self, data_source, conversation):
-        """
-        Prints characters statistics for specific conversation of given data source.
-
-        :param data_source: dictionary containing prepared data generated
-                            by the get_data() function
-        :param conversation: conversation id, or key from get_data() function
-        :return: None
-        """
-        data_source = pd.DataFrame(data_source)
-        data_source = data_source[conversation].dropna()
-        data_source = data_source.sort_values(ascending=False).astype('int')
-        pd.set_option('display.max_rows', None)
-        print(data_source)
-        print(f'Total characters: {data_source.sum()}')
-
-    def words_statistics(self, data_source):
-        pass
-
-    def words_conversation_statistics(self, data_source, user):
-        data_source = pd.DataFrame(data_source)
-        print(data_source.columns)
-        for key in data_source.columns:
-            if key.startswith(user):
-                data_source = data_source[key].dropna()
-                data_source = data_source.sort_values(ascending=False).astype('int')
-                pd.set_option('display.max_rows', 100)
-                print(data_source) # TODO show number of occurrences
-                print(f'Total words: {data_source.sum()}')
-        else:
-            print('User not found.')
 
 
     # User statistics
