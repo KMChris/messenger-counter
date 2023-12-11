@@ -20,7 +20,7 @@ class MessengerCounter:
 
     # Counting messages and characters
 
-    def count_messages(self):
+    def count_messages(self, update_progress):
         """
         Counts messages and returns dictionary.
         """
@@ -34,10 +34,11 @@ class MessengerCounter:
                 with self.source.open(file) as f:
                     df = pd.DataFrame(json.loads(f.read())['messages'])
                     messages += Counter(df['sender_name'])
-            total[sender] = {k.encode('iso-8859-1').decode('utf-8'): v for k, v in messages.items()}
+            total[sender] = {k.encode('iso-8859-1').decode('utf-8'): v
+                             for k, v in messages.items()}
             total[sender]['total'] = sum(messages.values())
             if self.gui:
-                eel.progress(int(100 * (i+1) / len(senders)))
+                update_progress(int(100 * (i+1) / len(senders)))
         return total
 
     def count_words(self):
@@ -109,15 +110,16 @@ class MessengerCounter:
             total[sender] = dict(counted_all)
         return total
 
-    def count(self, data_type='messages'):
+    def count(self, data_type='messages', update_progress=lambda x: None):
         """
         Counts messages, characters or words.
 
+        :param update_progress: function to update progress bar
         :param data_type: type of data to count (default 'messages')
         :return: None
         """
         if data_type == 'messages':
-            return self.count_messages()
+            return self.count_messages(update_progress)
         elif data_type == 'chars':
             return self.count_characters()
         elif data_type == 'words':

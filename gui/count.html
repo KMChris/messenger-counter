@@ -15,23 +15,21 @@
     <output for='p'></output>
 </div>
 
-<script type="text/javascript" src="/eel.js"></script>
 <script>
     const _PRG = document.getElementById('p'),
         _OUT = document.querySelector('[for=p]');
 
-    eel.expose(progress);
     function progress(progress = 0) {
-        _OUT.value = _PRG.value = Math.round(progress);
-        document.getElementById('p').value = progress;
+        _PRG.value = progress;
+        _OUT.value = Math.round(progress);
     }
     progress()
 
     async function count() {
-        await eel.count('messages')();
+        await pywebview.api.count();
         window.location.href = '/stats.html';
     }
-    count();
+    window.addEventListener('pywebviewready', count);
 </script>
 </body>
 </html>
