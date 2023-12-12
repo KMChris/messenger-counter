@@ -142,24 +142,6 @@ class MessengerCounter:
             return self.count_words()
 
 
-    # User statistics
-
-    def user_statistics(self, data_source, user_name):
-        """
-        Prints detailed statistics for specific person of given data source.
-
-        :param data_source: dictionary containing prepared data generated
-                            by the get_data() function
-        :param user_name: person name, or key from get_data() function
-        :return: None
-        """
-        data_source = data_source.loc[user_name]
-        data_source = data_source[data_source > 0].sort_values(ascending=False)
-        data_source.index = data_source.index.map(lambda x: x.split('_')[0][:30])
-        pd.set_option('display.max_rows', None)
-        print(user_name, 'statistics:')
-        print(data_source)
-
 
     # Intervals
 
@@ -336,7 +318,7 @@ class MessengerCounter:
         messages = Counter()
         for sender in self.source.senders:
             messages += self.interval_count(sender, lambda x: x.dt.date, delta)
-        self.interval_plot(messages)
+        return self.interval_plot(messages)
 
 
     # Monthly (not working)

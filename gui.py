@@ -1,6 +1,6 @@
 from tkinter.filedialog import askopenfilename
+from src.stats import statistics, interval
 from src.counter import MessengerCounter
-from src.stats import statistics
 import plotly.offline as pyo
 import tkinter as tk
 import webview
@@ -43,11 +43,11 @@ class GUI:
         except FileNotFoundError:
             return False
 
-    def get_plot(self, nav):
+    def get_plot(self, nav, conversation=None):
         if nav == 'stats':
             data, fig = statistics(self.data['messages'], data_type='messages')
-        elif nav == 'chars':
-            data, fig = statistics(self.data['chars'], data_type='chars')
+        elif nav == 'daily':
+            data, fig = interval('daily', self.counter, conversation)
         elif nav == 'words':
             data, fig = statistics(self.data['words'], data_type='words')
         else:
