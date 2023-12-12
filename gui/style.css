@@ -111,9 +111,10 @@ output:not(:empty):after {
     color: #beb9b0;
 }
 .mdl-navigation .mdl-navigation__link {
+    cursor: pointer;
     color: #9e9689;
 }
-.mdl-navigation .mdl-navigation__link:hover {
+.mdl-layout__drawer .mdl-navigation .mdl-navigation__link:hover {
     background-color: #2a2d2f;
 }
 

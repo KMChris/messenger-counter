@@ -47,8 +47,8 @@ def _messages_statistics(data_source):
     # TODO allow to choose date range (in future)
     fig = px.bar(data_source, x='total', y=data_source.index, orientation='h',
                  title='Messages statistics', labels={'x': 'Number of messages', 'y': 'User'},
-                 color_discrete_sequence=['#ffab40'])
-    # swap y axis
+                 color_discrete_sequence=['#ffab40'], height=1200)
+    # TODO min max not working in gui, increase high of the plot to the display size
     fig.update_yaxes(title=None, tickvals=data_source.index, ticktext=data_source['id'],
                      range=[len(data_source)-40, len(data_source)], minallowed=0, maxallowed=len(data_source))
     fig.update_xaxes(title=None, minallowed=0, maxallowed=data_source['total'].max(), fixedrange=True)
@@ -171,4 +171,4 @@ def interval_plot(messages):
                  color_discrete_sequence=['#ffab40'])
     fig.update_yaxes(fixedrange=True)
     fig.update_layout(dragmode='zoom', hovermode='x', bargap=0)
-    return fig
+    return messages, fig

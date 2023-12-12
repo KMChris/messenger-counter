@@ -45,15 +45,18 @@ class GUI:
 
     def get_plot(self, nav, conversation=None):
         if nav == 'stats':
+            data, fig = statistics(self.data['messages'], conversation, data_type='messages')
+        elif nav == 'words':
+            data, fig = statistics(self.data['words'], data_type='words')
+        elif nav == 'user':
             data, fig = statistics(self.data['messages'], data_type='messages')
         elif nav == 'daily':
             data, fig = interval('daily', self.counter, conversation)
-        elif nav == 'words':
-            data, fig = statistics(self.data['words'], data_type='words')
+        elif nav == 'hours':
+            data, fig = interval('hours', self.counter, conversation)
         else:
-            data, fig = statistics(self.data['messages'], data_type='messages')
+            return None, None
         return data.to_json(), generate_plot(fig)
-
 
 def generate_plot(fig):
     plot_html = pyo.plot(fig, output_type='div', include_plotlyjs=False,
@@ -66,4 +69,4 @@ if __name__ == '__main__':
     gui = GUI()
     gui.window = webview.create_window("Messenger Counter",  'gui/index.html', js_api=gui,
                                        width=1280, height=720, min_size=(800, 600), background_color='#111111')
-    webview.start(debug=False)
+    webview.start(debug=True)
