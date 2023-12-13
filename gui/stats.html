@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="material.orange-indigo.min.css"/>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="virtual-select.min.css">
 </head>
 <body>
 
@@ -23,10 +24,12 @@
     </div>
     <main class="mdl-layout__content">
         <div class="page-content">
-            <label for="user-select"></label>
-            <select id="user-select" class="mdl-textfield__input" onchange="plot()">
-                <option selected="selected">All</option>
-            </select>
+            <div id="user-select"></div>
+
+<!--            <label for="user-select"></label>-->
+<!--            <select id="user-select" class="mdl-textfield__input" onchange="plot()">-->
+<!--                <option selected="selected">All</option>-->
+<!--            </select>-->
             <div id="plots">
                 <div id="plot-container"></div>
             </div>
@@ -43,26 +46,40 @@
         plot();
     }
 
-    async function plot() {
+    async function plot(user) {
         // TODO add placeholder for plot or loading spinner if plot already exists
-        let [data, plot] = await pywebview.api.get_plot(page, select.value);
+        let [data, plot] = await pywebview.api.get_plot(page, user);
         document.getElementById('plot-container').innerHTML = plot[0];
         eval(plot[1]);
         return JSON.parse(data);
     }
 
+    document.querySelector('#user-select').addEventListener('change', function() {
+        plot(this.value);
+    });
+
     window.addEventListener('pywebviewready', async () => {
         data = await plot();
+        let options = [{label: 'All', value: null}];
         Object.keys(data.id).sort(
             (a, b) => data.total[b] - data.total[a]
         ).map(key => [key, data.id[key]]).forEach(([key, value]) => {
-            const opt = document.createElement('option');
-            opt.value = key;
-            opt.innerHTML = value;
-            select.appendChild(opt);
+            // const opt = document.createElement('option');
+            // opt.value = key;
+            // opt.innerHTML = value;
+            // select.appendChild(opt);
+            options.push({label: value, value: key});
+        });
+        VirtualSelect.init({
+            ele: '#user-select',
+            options: options,
+            optionsCount: 10,
+            search: true,
+            selectedValue: null
         });
     });
 </script>
+<script src="virtual-select.min.js"></script>
 <script src="plotly-latest.min.js"></script>
 <script defer src="material.min.js"></script>
 </body>

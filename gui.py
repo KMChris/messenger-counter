@@ -67,6 +67,7 @@ def generate_plot(fig):
 
 if __name__ == '__main__':
     gui = GUI()
-    gui.window = webview.create_window("Messenger Counter",  'gui/index.html', js_api=gui,
-                                       width=1280, height=720, min_size=(800, 600), background_color='#111111')
+    gui.window = webview.create_window("Messenger Counter",  'gui/index.html',
+                                       js_api=gui, background_color='#111111',
+                                       width=1280, height=720, min_size=(800, 600))
     webview.start(debug=True)

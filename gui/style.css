@@ -119,7 +119,22 @@ output:not(:empty):after {
 }
 
 /* Plots view */
+.page-content {
+    height: 100vh;
+}
+.plot-options{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 10px 20px;
+}
 #plot-container {
     width: 100%;
+    height: 100%;
+}
+.plotly-graph-div {
+    height: 100%;
+}
+#plots {
     height: 100%;
 }

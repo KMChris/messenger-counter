@@ -46,16 +46,12 @@ def _messages_statistics(data_source):
     print(data_source.describe()) # TODO add to gui
     # TODO allow to choose date range (in future)
     fig = px.bar(data_source, x='total', y=data_source.index, orientation='h',
-                 title='Messages statistics', labels={'x': 'Number of messages', 'y': 'User'},
-                 color_discrete_sequence=['#ffab40'], height=1200)
-    # TODO min max not working in gui, increase high of the plot to the display size
+                 title='Messages statistics', color_discrete_sequence=['#ffab40'],
+                 labels={'x': 'Number of messages', 'y': 'User'})
     fig.update_yaxes(title=None, tickvals=data_source.index, ticktext=data_source['id'],
                      range=[len(data_source)-40, len(data_source)], minallowed=0, maxallowed=len(data_source))
     fig.update_xaxes(title=None, minallowed=0, maxallowed=data_source['total'].max(), fixedrange=True)
     fig.update_layout(dragmode='pan')
-    # fig.show(config={
-    #     'scrollZoom': True
-    # })
     return data_source, fig
 
 def _conversation_statistics(data_source, conversation):
