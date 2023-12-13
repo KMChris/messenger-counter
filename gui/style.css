@@ -71,12 +71,12 @@ progress[value] {
     height: 0.25em;
     border: none;
     border-radius: 0.125em;
-    background: #e6eeff;
+    background: #2a2d2f;
 }
 progress[value]::-webkit-progress-bar {
     border: none;
     border-radius: 0.125em;
-    background: #e6eeff;
+    background: #2a2d2f;
 }
 progress[value]::-webkit-progress-value {
     border: none;
@@ -101,7 +101,7 @@ output:not(:empty):after {
 }
 #progress-text {
     margin: 12px 0;
-    color: #e6eeff;
+    color: #beb9b0;
     font-size: 0.5em;
 }
 
@@ -109,6 +109,7 @@ output:not(:empty):after {
 .mdl-layout__drawer {
     background-color: #1b1d1e;
     color: #beb9b0;
+    border-right: 1px solid #2a2d2f;
 }
 .mdl-navigation .mdl-navigation__link {
     cursor: pointer;
@@ -121,12 +122,13 @@ output:not(:empty):after {
 /* Plots view */
 .page-content {
     height: 100vh;
+    margin-top: 10px;
 }
-.plot-options{
+.plot-options {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin: 10px 20px;
+    margin: 0 20px;
 }
 #plot-container {
     width: 100%;
@@ -135,6 +137,36 @@ output:not(:empty):after {
 .plotly-graph-div {
     height: 100%;
 }
-#plots {
+#plot {
     height: 100%;
+}
+
+/* User select dark mode */
+.vscomp-wrapper {
+    color: #beb9b0 !important;
+}
+.vscomp-toggle-button {
+    background-color: #1b1d1e !important;
+    border: 1px solid #2a2d2f !important;
+}
+.vscomp-dropbox {
+    background-color: #1b1d1e !important;
+    border: 1px solid #2a2d2f !important;
+}
+.vscomp-search-container {
+    border-bottom: 1px solid #2a2d2f !important;
+}
+.vscomp-arrow::after {
+    border-bottom-color: #beb9b0 !important;
+    border-right-color: #beb9b0 !important;
+}
+.pop-comp-wrapper {
+    background-color: #1b1d1e !important;
+    color: #beb9b0 !important;
+}
+.vscomp-option.focused {
+    background-color: #2a2d2f !important
+}
+.vscomp-option.selected {
+    background-color: #383838 !important;
 }

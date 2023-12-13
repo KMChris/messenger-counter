@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="color-scheme" content="dark">
     <title>Messenger Counter</title>
     <link rel="icon" href="favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,13 +25,10 @@
     </div>
     <main class="mdl-layout__content">
         <div class="page-content">
-            <div id="user-select"></div>
-
-<!--            <label for="user-select"></label>-->
-<!--            <select id="user-select" class="mdl-textfield__input" onchange="plot()">-->
-<!--                <option selected="selected">All</option>-->
-<!--            </select>-->
-            <div id="plots">
+            <div class="plot-options">
+                <div id="user-select"></div>
+            </div>
+            <div id="plot">
                 <div id="plot-container"></div>
             </div>
         </div>
@@ -43,7 +41,7 @@
     const select = document.getElementById('user-select');
     function nav(link) {
         page = link;
-        plot();
+        plot(document.querySelector('#sample-select').value);
     }
 
     async function plot(user) {
@@ -60,14 +58,10 @@
 
     window.addEventListener('pywebviewready', async () => {
         data = await plot();
-        let options = [{label: 'All', value: null}];
+        let options = [{label: 'All', value: ''}];
         Object.keys(data.id).sort(
             (a, b) => data.total[b] - data.total[a]
         ).map(key => [key, data.id[key]]).forEach(([key, value]) => {
-            // const opt = document.createElement('option');
-            // opt.value = key;
-            // opt.innerHTML = value;
-            // select.appendChild(opt);
             options.push({label: value, value: key});
         });
         VirtualSelect.init({
@@ -75,7 +69,7 @@
             options: options,
             optionsCount: 10,
             search: true,
-            selectedValue: null
+            selectedValue: 'All'
         });
     });
 </script>

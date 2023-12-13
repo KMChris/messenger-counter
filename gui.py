@@ -44,6 +44,8 @@ class GUI:
             return False
 
     def get_plot(self, nav, conversation=None):
+        if conversation=='':
+            conversation = None
         if nav == 'stats':
             data, fig = statistics(self.data['messages'], conversation, data_type='messages')
         elif nav == 'words':
@@ -70,4 +72,4 @@ if __name__ == '__main__':
     gui.window = webview.create_window("Messenger Counter",  'gui/index.html',
                                        js_api=gui, background_color='#111111',
                                        width=1280, height=720, min_size=(800, 600))
-    webview.start(debug=True)
+    webview.start(debug=False)
