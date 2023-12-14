@@ -108,15 +108,24 @@ output:not(:empty):after {
 /* Menu */
 .mdl-layout__drawer {
     background-color: #1b1d1e;
-    color: #beb9b0;
+    color: #ffab40;
     border-right: 1px solid #2a2d2f;
 }
-.mdl-navigation .mdl-navigation__link {
+.mdl-layout__drawer .mdl-navigation .mdl-navigation__link {
     cursor: pointer;
     color: #9e9689;
+    border-radius: 10px;
 }
-.mdl-layout__drawer .mdl-navigation .mdl-navigation__link:hover {
+.mdl-layout__drawer .mdl-navigation .mdl-navigation__link:hover:not(.is-active) {
     background-color: #2a2d2f;
+    color: #9e9689;
+}
+.mdl-navigation .is-active {
+    background-color: #ffab40 !important;
+    color: #000 !important;
+}
+.mdl-layout__drawer-button {
+    color: rgba(255, 255, 255, 0.5);
 }
 
 /* Plots view */
@@ -126,9 +135,15 @@ output:not(:empty):after {
 }
 .plot-options {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
+    gap: 20px;
     align-items: center;
     margin: 0 20px;
+}
+@media screen and (max-width: 1024px) {
+    .plot-options {
+        margin: 6px 64px;
+    }
 }
 #plot-container {
     width: 100%;

@@ -47,20 +47,22 @@ class GUI:
         if conversation=='':
             conversation = None
         if nav == 'stats':
-            data, fig = statistics(self.data['messages'], conversation, data_type='messages')
+            data, fig, table = statistics(self.data['messages'], conversation, data_type='messages')
         elif nav == 'words':
-            data, fig = statistics(self.data['words'], data_type='words')
+            data, fig, table = statistics(self.data['words'], data_type='words')
         elif nav == 'user':
-            data, fig = statistics(self.data['messages'], data_type='messages')
+            data, fig, table = statistics(self.data['messages'], data_type='messages')
         elif nav == 'daily':
-            data, fig = interval('daily', self.counter, conversation)
+            data, fig, table = interval('daily', self.counter, conversation)
         elif nav == 'hours':
-            data, fig = interval('hours', self.counter, conversation)
+            data, fig, table = interval('hours', self.counter, conversation)
         else:
-            return None, None
-        return data.to_json(), generate_plot(fig)
+            return None, None, None
+        return data.to_json(), generate_plot(fig), generate_plot(table)
 
 def generate_plot(fig):
+    if fig is None:
+        return None, None
     plot_html = pyo.plot(fig, output_type='div', include_plotlyjs=False,
                          config={'displayModeBar': False, 'scrollZoom': True})
     div = re.search(r'<div id.*?</div>', plot_html).group()

@@ -1,7 +1,7 @@
+import plotly.graph_objects as go
 from collections import Counter
 import plotly.express as px
 import pandas as pd
-px.defaults.template = 'plotly_dark'
 
 
 def statistics(data_source, conversation=None, data_type='messages'):
@@ -38,20 +38,23 @@ def _messages_statistics(df):
     :return: None
     """
     # TODO split by your messages and others
+    # TODO allow to choose date range (in future)
     df = pd.DataFrame(df).loc[['id', 'total']].T
-    pd.set_option('display.max_rows', None)
     df['total'] = df['total'].fillna(0).astype('int')
     df = df.sort_values(by='total')
-    print(df)
-    print(df.describe()) # TODO add to gui
-    # TODO allow to choose date range (in future)
     fig = px.bar(df, x='total', y=df.index, orientation='h',
                  color_discrete_sequence=['#ffab40'])
     fig.update_yaxes(title=None, tickvals=df.index, ticktext=df['id'],
-                     range=[len(df)-40, len(df)], minallowed=0, maxallowed=len(df))
+                     range=[len(df)-40, len(df)], minallowed=0, maxallowed=len(df.index))
     fig.update_xaxes(title=None, minallowed=0, maxallowed=df['total'].max(), fixedrange=True)
-    fig.update_layout(dragmode='pan')
-    return df, fig
+    fig.update_layout(dragmode='pan', template='plotly_dark')
+    table = go.Figure(data=[go.Table(header=dict(values=['Conversation', 'Messages'], align='left',
+                      fill_color='#ffab40', font=dict(color='#1d1d1e', size=14)),
+                      cells=dict(values=[df['id'][::-1], df['total'][::-1]], align=['left', 'right'],
+                      fill_color='#1d1d1e', font=dict(color='#beb9b0', size=12)))], layout=dict(height=700))
+    table.update_layout(template='plotly_dark')
+    print(df.describe()) # TODO add to gui
+    return df, fig, table
 
 def _conversation_statistics(df, conversation):
     """
@@ -62,18 +65,21 @@ def _conversation_statistics(df, conversation):
     :param conversation: conversation id, or key from get_data() function
     :return: None
     """
-    print(conversation)
     df = pd.Series(df[conversation])
     df = df.loc[~df.index.isin(['total', 'id', 'path', 'participants', 'image'])]
     df = df.sort_values(ascending=False)
     pd.set_option('display.max_rows', None)
-    print(df)
     fig = px.pie(df, values=df.values, names=df.index)
     fig.update_traces(textposition='inside')
-    fig.update_layout(uniformtext_minsize=12, uniformtext_mode='hide')
-    return df, fig
+    fig.update_layout(uniformtext_minsize=12, uniformtext_mode='hide', template='plotly_dark')
+    table = go.Figure(data=[go.Table(header=dict(values=['User', 'Messages'], align='left',
+                      fill_color='#ffab40', font=dict(color='#1d1d1e', size=14)),
+                      cells=dict(values=[df.index, df.values], fill_color='#1d1d1e',
+                      align=['left', 'right'], font=dict(color='#beb9b0', size=12)))], layout=dict(height=700))
+    table.update_layout(template='plotly_dark')
+    return df, fig, table
 
-def _characters_statistics(data_source):
+def _characters_statistics(data_source): # TODO
     """
     Prints characters statistics of given data source.
 
@@ -89,7 +95,7 @@ def _characters_statistics(data_source):
     print(data_source)
     print(f'Total characters: {data_source.sum()}')
 
-def _characters_conversation_statistics(data_source, conversation):
+def _characters_conversation_statistics(data_source, conversation): # TODO
     """
     Prints characters statistics for specific conversation of given data source.
 
@@ -105,10 +111,10 @@ def _characters_conversation_statistics(data_source, conversation):
     print(data_source)
     print(f'Total characters: {data_source.sum()}')
 
-def _words_statistics(data_source):
+def _words_statistics(data_source): # TODO
     pass
 
-def _words_conversation_statistics(data_source, user):
+def _words_conversation_statistics(data_source, user): # TODO
     data_source = pd.DataFrame(data_source)
     print(data_source.columns)
     for key in data_source.columns:
@@ -169,5 +175,10 @@ def interval_plot(messages):
                  labels={'x': 'Date', 'y': 'Messages'},
                  color_discrete_sequence=['#ffab40'])
     fig.update_yaxes(fixedrange=True)
-    fig.update_layout(dragmode='zoom', hovermode='x', bargap=0)
-    return messages, fig
+    fig.update_layout(dragmode='zoom', hovermode='x', bargap=0, template='plotly_dark')
+    table = go.Figure(data=[go.Table(header=dict(values=['Date', 'Messages'],
+                      align='left', fill_color='#ffab40', font=dict(color='#1d1d1e', size=14)),
+                      cells=dict(values=[messages.index, messages.values], fill_color='#1d1d1e',
+                      align='right', font=dict(color='#beb9b0', size=12)))], layout=dict(height=700))
+    table.update_layout(template='plotly_dark')
+    return messages, fig, table

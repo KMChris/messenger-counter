@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="material.orange-indigo.min.css"/>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="virtual-select.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 </head>
 <body>
 
@@ -16,20 +17,23 @@
     <div class="mdl-layout__drawer">
         <span class="mdl-layout-title">Messenger Counter</span>
         <nav class="mdl-navigation">
-            <a class="mdl-navigation__link" onclick="nav('stats')">Stats</a>
-            <a class="mdl-navigation__link" onclick="nav('words')">Words</a>
-            <a class="mdl-navigation__link" onclick="nav('user')">User</a>
-            <a class="mdl-navigation__link" onclick="nav('daily')">Daily</a>
-            <a class="mdl-navigation__link" onclick="nav('hours')">Hours</a>
+            <a id="stats" class="mdl-navigation__link is-active" onclick="nav('stats')">Total per Conversation</a>
+            <a id="daily" class="mdl-navigation__link" onclick="nav('daily')">Message Trends</a>
+            <a id="hours" class="mdl-navigation__link" onclick="nav('hours')">Time Analytics</a>
+            <a id="words" class="mdl-navigation__link" onclick="nav('words')">Words Statistics</a>
+            <a id="user" class="mdl-navigation__link" onclick="nav('user')">User-Specific</a>
         </nav>
     </div>
     <main class="mdl-layout__content">
         <div class="page-content">
             <div class="plot-options">
-                <div id="user-select"></div>
+                <div id="conv-select"></div>
+                <div class="hidden" id="user-select"></div>
+                <div class="hidden" id="time-select"></div>
             </div>
             <div id="plot">
                 <div id="plot-container"></div>
+                <div id="table-container"></div>
             </div>
         </div>
     </main>
@@ -38,22 +42,36 @@
 <script>
     let page = 'stats';
     let data = null;
-    const select = document.getElementById('user-select');
+    const convSelect = document.getElementById('conv-select');
+    const userSelect = document.getElementById('user-select');
+    const timeSelect = document.getElementById('time-select');
     function nav(link) {
+        document.getElementById(page).classList.remove('is-active');
         page = link;
-        plot(document.querySelector('#sample-select').value);
+        document.getElementById(page).classList.add('is-active');
+        document.querySelector('.mdl-layout__drawer').classList.remove('is-visible');
+        document.querySelector('.mdl-layout__obfuscator').classList.remove('is-visible');
+        plot(convSelect.value);
     }
 
     async function plot(user) {
         // TODO add placeholder for plot or loading spinner if plot already exists
-        let [data, plot] = await pywebview.api.get_plot(page, user);
+        let [data, plot, table] = await pywebview.api.get_plot(page, user);
         document.getElementById('plot-container').innerHTML = plot[0];
         eval(plot[1]);
+        document.getElementById('table-container').innerHTML = table[0];
+        eval(table[1]);
         return JSON.parse(data);
     }
 
-    document.querySelector('#user-select').addEventListener('change', function() {
+    convSelect.addEventListener('change', function() {
         plot(this.value);
+    });
+    userSelect.addEventListener('change', function() {
+
+    });
+    timeSelect.addEventListener('change', function() {
+
     });
 
     window.addEventListener('pywebviewready', async () => {
@@ -65,11 +83,23 @@
             options.push({label: value, value: key});
         });
         VirtualSelect.init({
-            ele: '#user-select',
+            ele: '#conv-select',
             options: options,
             optionsCount: 10,
             search: true,
             selectedValue: 'All'
+        });
+        VirtualSelect.init({
+            ele: '#user-select',
+            options: [],
+            optionsCount: 10,
+            search: true
+        });
+        VirtualSelect.init({
+            ele: '#time-select',
+            options: [],
+            optionsCount: 10,
+            search: true
         });
     });
 </script>
